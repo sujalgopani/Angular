@@ -930,9 +930,207 @@ Signal : used like a store or set or update value
 			<router-outlet />// in this ng-container fill the componanent by throw out the ngComponentOutlet.
 			// here if the user is true then parent is call other side child is called or render in the main app.ts
 			
-			Using ViewContainerRef...........
-
-
-
+			
+○ ViewContainerRef : 
+	- At the Runtime When We Want to Display Dynamic UI Then Used ViewContainerRef.
+	- In short Dynamic Display UI At a Runtime.
+	
+	Ex.
+		Parent.ts
+			- in this file contain only html code like '<h2>Parent Component Loaded</h2>
+              <h3>Parent Here For Rendering By Content Ref</h3>'.
+	 
+		app.ts	
+			export class App {
+			   private views = inject(ViewContainerRef);
+			   btn:boolean = false;
+			   loadparent(){
+				this.views.createComponent(Parent);
+				this.btn = true;
+			   }
+			  }
+		app.html 
+			<button (click)="loadparent()" [disabled]="btn">Load Now Parent</button>
+			// here when the user click the button then parent componanent are loaded in the app.ts at run time by using ViewContainerRef.
+			
+	○ Lazy-loading components :
+		- When User Want to Show The Particular Component By Clicking Button or etc Then Used the lazy loading technique.
+		- In this componanent is not loaded on the runtime but when click button or anything else happen that time componanent are rendered or import.
+		- two type of lazy loading - @defer or ngComponentOutlet
 		
+		Ex.
+			parent.ts
+				- it's contain simple html text.
+			
+			app.ts
+				- export class App {
+					parentval : any | null = null;
+					async loadpar(){
+					  const {Parent} = await import('./parent/parent')
+					  this.parentval = Parent;
+					}
+				  }
+			app.html
+				<h1>App Component</h1>
+
+				@if(!parentval){
+				  <button (click)="loadpar()">Login</button>
+				}
+				<ng-container *ngComponentOutlet="parentval"></ng-container>
+				// here first of the parentval is null then out condition is !parentval (!null) means true so when the parentval is true that time button is show after clicking button that is vanish which means that is not show.
+				// click tha button and dynamic import the parent in the app.ts so parentval has consume parent componanent so now it's not null so button is not show. (so that is lazy loading...)
+
+
+○ Binding inputs, outputs and setting host directives at creation : 
+	- when the use with simple template that time we use a @input or @output but when use the dynamic loading template by using ViewContainerRef that time inputbinding,outputbinding used.
+	- in short when the used the simple way for pass data from parent to child that time used the simple method @Input(),@Outlet(),
+		but when the used ViewContainerRef for dynamic componanent Rendering that time pass the value by using inputbinding,outputbinding which is latest v17+ angular method.
 		
+		Ex.
+			child.ts
+				@Component({
+				  selector: 'app-child',
+				  standalone: true,
+				 
+				  template: `
+					 <h2>Child Component</h2>
+					  <h4>Child Input From Parent : {{Childinput}}</h4>
+					  <button (click)="Sendtoparent()">Send To PArent</button>
+				  `
+				})
+				export class ChildComponent {
+				 @Input() Childinput?: string ;
+				 @Output() Childoutput = new EventEmitter<string>();
+
+				 Sendtoparent(){
+				  this.Childoutput.emit("I am Child How Are You Parent!");
+				 }
+				}
+				
+			parent.ts
+				@Component({
+				  selector: 'app-parent',
+				  styleUrl: './parent.css',
+				   template: `
+				  <h2>Parent Component</h2>
+				  <p>Parent Input From app : {{ParentInput}}</p>
+				  <p>Parent Text Is : {{ReplyofParenttext}}</p>
+				   <app-child
+					 [Childinput]="Childinputvalue"
+					  (Childoutput)="ReplyFromParent($event)"
+				   ></app-child>
+				  `
+				,
+				  imports: [ChildComponent]
+				})
+
+				export class Parent  {
+				 Childinputvalue = "Hy Child, I am Parent";
+				  ReplyofParenttext = "";
+
+				  @Input() ParentInput?:string;
+				  @Output() replyMessage = new EventEmitter<string>();
+
+
+				  ReplyFromParent(msg : any | null){
+					this.ReplyofParenttext = msg;
+					this.replyMessage.emit(msg)
+				  }
+				}
+				
+			app.ts
+				export class App {
+					private vcr = inject(ViewContainerRef);
+					Loadparent(){
+					  import('./parent/parent').then(({Parent})=>{
+						this.vcr.createComponent(Parent,{
+						  bindings:[
+							inputBinding('ParentInput',()=>'Hellow Parent I am App'),
+							outputBinding('replyMessage',(val:any)=>{
+							  console.log("Parent Output : ",val);
+							})
+						  ]
+						})
+					  })
+					}
+				  }
+				  
+			app.html
+				<h1>App Component</h1>
+				<button (click)="Loadparent()">Load Parent</button>
+			// code Explain :
+				- in the child component use @input(value consider from parent)
+					@output(value give to parent)
+				- in the parent use @input(value consider from the child)
+					@output(value give from the app)
+				- in the app.ts use a ViewContainerRef for using dynamically render parent by clicking button.
+					in the app.ts we used the inputbinding,outputbinding which is above side.
+					
+○ ViewContainerRef.createComponent :
+	- this is used when we want to make new component in the particular place.which means ViewContainerRef.createComponent is a make a new or create new component from given place in the current componanent.
+		Ex.
+		// child.ts
+			@Component({
+			  selector: 'app-child',
+			  standalone: true,
+			  template: `
+				 <h2>Child Component</h2>
+				 <p>Parent Message: {{ messageFromParent() }}</p>
+
+			<button (click)="sendToParent.emit('Hello Parent!')">
+			  Send To Parent
+			</button>
+			  `
+			})
+			export class ChildComponent {
+			  messageFromParent = input<string>("");
+			  sendToParent = output<string>();
+			}
+			
+		parent.ts	
+			@Component({
+			  selector: 'app-parent',
+			  styleUrl: './parent.css',
+			   template: `
+			 <h2>Parent Component</h2>
+			<button (click)="loadChild()">Load Child Dynamically</button>
+			<p>Message From Child: {{ childMsg() }}</p>
+			<ng-container #box></ng-container>
+			  `
+			,
+			  imports: []
+			})
+
+			export class Parent  {
+			  vcr = inject(ViewContainerRef);
+			  // signals
+			  parentMsg = signal("Hello Child From Parent!");
+			  childMsg = signal("");
+			  loadChild() {
+				this.vcr.createComponent(ChildComponent, {
+				  bindings: [
+					// INPUT → Parent → Child
+					inputBinding("messageFromParent", this.parentMsg),
+					// OUTPUT → Child → Parent
+					outputBinding("sendToParent", (msg: string) => {
+					  this.childMsg.set(msg);
+					})
+				  ]
+				});
+			  }
+			}
+	
+		app.html
+			
+			<h1>App Component</h1>
+			<app-parent></app-parent>
+			// here make a simple example of the ViewContainerRef.createComponent.
+			- in the chid.ts make a input and output for data pass from parent to child and child to parent.
+			- in the parent given to string to child for input and retrive the string which is belong to child by output.
+			- inputbinding is gives to data to child and outputbinding is read the data which is receive from child.
+			- in short inputbinding is give and outputbinding is take.
+	
+								
+
+						
+						Advanced component configuration.... 
