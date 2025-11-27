@@ -1131,6 +1131,605 @@ Signal : used like a store or set or update value
 			- in short inputbinding is give and outputbinding is take.
 	
 								
+------------------
+25/11/2025
+----------		
+○ Advanced component :
+	
+	○ ChangeDetectionStrategy : 
+		- this is a check the componanent when the anything happen in the componanent.
+		- when the button clicked,settimeout,api responce,Keyborad key press when ChangeDetectionStrategy is check the componanent.
+		- in this two mode is available : 1.Default, 2.OnPush
+		- Default : Every time check componanent when the anything happen in the componanent.
+		- OnPush : only check when we want not check every time, that check when the input change,componanent event handle(button,keybord),Promises run.
+		- in short default is every time every componanent check. nut OnPush is check when we want.
+		Ex.
+			@Component({
+			  selector: 'child',
+			  template: '{{count}}',
+			  changeDetection: ChangeDetectionStrategy.OnPush & Default
+			})
+			
+	○ PreserveWhitespaces : 
+		 - by default html not consider a extra space or tabs but PreserveWhitespaces is help to consider extra space or tabs in the code.
+		 Ex.
+			@Component({
+			  selector: 'app-root',
+			  templateUrl: './app.html',
+			  styleUrl: './app.css',
+			  preserveWhitespaces: true
+			})
+			// witout PreserveWhitespaces below code is show as a 'Hellow Sujal'
+			<h1>App Component</h1>
+			<p class="keep-space">
+			  Hello
+				Sujal
+			</p>
+			// but the use of PreserveWhitespaces is show as same as browser.
+			
+	○ Custom Element Schema :
+		- bydefault angular not allow to out of html tag in the angular application.
+		- but Custom Element Schema is help to write a custom tag or use a other framework tag in the angular. like a vue js tag is used in angular.
+		- but main thing angular cannot a bind that tag.
+		Ex.
+			<my-web-component></my-web-component> // it's not a satisfied for angular.
+			
+			@Component({
+			  selector: 'demo',
+			  template: `
+				<some-unknown-component></some-unknown-component>
+			  `,
+			  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+			})// use of this allow to write the custom componanent.
+			
+			✔ Allowed:
+			<my-tag></my-tag>
 
-						
-						Advanced component configuration.... 
+
+			❌ But aa still angular not bind this :
+			<my-tag [data]="value"></my-tag>  // because Angular check nahi kari shake
+
+	○ custom elements:
+	 - in the above point we know the angular is not accept the custom componanent but when we used schemas so we used the custom componanent.
+	 - now create a custom element by helping createCustomElement() from @angular/element.
+	 - so must install first npm install @angular/element.
+	 Ex.
+		1. Make componanent in the angular.
+			import { Component, EventEmitter, Input, input, Output } from '@angular/core';
+			import { NgComponentOutlet } from '@angular/common';
+
+			@Component({
+			  selector: 'app-child',
+			  standalone: true,
+			 
+			  template: `
+				 <h2>Child Component</h2>
+			  `
+			})
+			export class ChildComponent {
+			}
+			// in this example we make two componanent parent or chid. this 2 componanent we can convert into custom element.
+			
+			2.make one file named RegiCustom (for registration of custom componanent)
+				import { Component, Injector } from "@angular/core";
+				import { Parent } from "../parent/parent";
+				import { ChildComponent } from "../child/child";
+				import { createCustomElement } from "@angular/elements";
+
+				export function RegiCustom(injector : Injector){
+				  const elements =[
+					{name : 'parent-com',component:Parent},
+					{name : 'child-com',component:ChildComponent},
+				  ]
+
+				  elements.forEach(e1=>{
+					if(!customElements.get(e1.name)){
+					  const e1class = createCustomElement(e1.component as any,{injector});
+					  customElements.define(e1.name,e1class);
+					  console.log("Rgistration success !");
+					}
+				  });
+				}
+				
+			3.Register in main.ts : 
+				import { bootstrapApplication } from '@angular/platform-browser';
+				import { appConfig } from './app/app.config';
+				import { App } from './app/app';
+				import { RegiCustom } from './app/CustomEle/RegiCustom';
+
+				bootstrapApplication(App, appConfig)
+				.then(appref=> {
+				  RegiCustom(appref.injector)
+				})
+				.catch((err) => console.error(err));
+			
+			4.use schemas : [CUSTOM_ELEMENTS_SCHEMA] for use a custom componanent in the angular.
+				app.ts
+				@Component({
+					selector: 'app-root',
+					templateUrl: './app.html',
+					styleUrl: './app.css',
+					schemas : [CUSTOM_ELEMENTS_SCHEMA]
+					})
+
+				  export class App {
+				  }
+			
+			5.just write and used :
+				app.html
+				<h1>App Component</h1>
+
+				<parent-com name="Sujal"></parent-com>
+				<child-com></child-com>
+				// named is must be write seprate by '-' like pare-com, childpar not allow.
+
+○ Template : 
+	- Template is Html file in the angular application.
+	- componanent is a typescript or ts file of the angular or Template is the Html file of the Angular application.
+	
+	○ Binding dynamic text, properties and attributes :
+		- 1) Text Interpolation — {{ }} // this is only for a text.
+				<p>Your color preference is {{ theme }}.</p>
+			Component:
+				theme = 'dark';
+		🔹 Output:
+			Your color preference is dark.
+		
+		- 2) Interpolation with Signal : // when the signal is changed then UI re-render
+				<p>Your color preference is {{ theme() }}</p>
+			Component:
+				theme = signal('dark');
+				
+		- 3) Property Binding [] :
+			<button [disabled]="isFormValid()">Save</button>
+			// used the disabled attribute in the angular UI
+		
+		- 4) Component / Directive Property Binding :
+			Angular component
+				<my-listbox [value]="mySelection()" />
+			Directive :
+				<img [ngSrc]="profilePhotoUrl()" />
+		
+		- 5) Attribute Binding — [attr.name]
+			<ul [attr.role]="listRole()"></ul>
+	
+		- 6) Interpolation inside Attributes
+			<img alt="Profile photo of {{ firstName() }}">
+		
+		- 7) CSS Class Binding
+			<ul [class.expanded]="isExpanded()"></ul>
+		
+		- 8) CSS Style Binding — [style.property]
+			<p [style.color]="theme()">Hello</p>
+
+	
+	○ Adding event listeners : 
+		- Apply Events in the html attribute like keyup,keydown,click,mouseleave etc..
+		
+		○ Listening to native events :
+			- When you want to add event listeners to an HTML element, you wrap the event with parentheses, (), which allows you to specify a listener statement.
+			Ex.
+				@Component({
+				  template: `
+					<input type="text" (keyup)="updateField()" />
+				  `,
+				  ...
+				})
+				export class AppComponent{
+				  updateField(): void {
+					console.log('Field is updated!');
+				  }
+				} //You can add listeners for any native events, such as: click, keydown, mouseover, etc.
+		
+		○ Accessing the event argument :
+			- In every template event listener, Angular provides a variable named $event that contains a reference to the event object.
+			- In short all the reference of the Html Attribute can catch in the ts file by the $event.
+			Ex.
+				@Component({
+				  template: `
+					<input type="text" (keyup)="updateField($event)" />
+				  `,
+				  ...
+				})
+				export class AppComponent {
+				  updateField(event: KeyboardEvent): void {
+					console.log(`The user pressed: ${event.key}`);
+				  }
+				}// here every time when the user enter text in the input attribute then console print the keybord presed key as a string, like if the user press the something like 'S' so console print the 'S' and so on.
+				
+		○ Using key modifiers :
+			- When you want to capture specific keyboard events for a specific key, you might write some code like the following:
+			- When We Want the Perform task When the user press specific key.
+			Ex.
+				@Component({
+				  template: `
+					<input type="text" (keyup)="updateField($event)" />
+				  `,
+				  ...
+				})
+				export class AppComponent {
+				  updateField(event: KeyboardEvent): void {
+					if (event.key === 'Enter') {
+					  console.log('The user pressed enter in the text field.');
+					}
+				  }
+				}
+				
+				@Component({
+				  template: `
+					<input type="text" (keyup.enter)="updateField($event)" />
+				  `,
+				  ...
+				})
+				export class AppComponent{
+				  updateField(event: KeyboardEvent): void {
+					console.log('The user pressed enter in the text field.');
+				  }
+				}// when the user press the enter key that time console is log.
+				
+				<!-- Matches shift and enter --> // press shift + Enter At a time
+				<input type="text" (keyup.shift.enter)="updateField($event)" />
+
+				<!-- Matches alt and left shift -->
+				<input type="text" (keydown.code.alt.shiftleft)="updateField($event)" />
+				// here when the press only alt + left shift when call method otherwise not.
+				
+		○ Preventing event default behavior :
+			- When the use <a></a> and click on that time browser can reload, or anything else happen while clicking, but we not want that, so used a preventDefault() method which is belong to JS.
+			Ex.
+				@Component({
+				  template: `
+					<a href="#overlay" (click)="showOverlay($event)">REFRESH</a>
+				  `,
+				  ...
+				})
+				export class AppComponent{
+				  showOverlay(event: PointerEvent): void {
+					event.preventDefault();
+					console.log('Show overlay without updating the URL!');
+				  }
+				}// wihtout preventDefault method when user click the <a> then browser redirect to #overlay direction but preventDefault method is not allow this, that help to not reload browser and stay there.
+			
+--------------
+27/11/2025
+----------
+	○ Extend event handling :
+		- In the Angular Application SomeTime Use a Click,Keyup,Mouse etc.. But When We Want to Make A Custom Event That Time It's Used.
+		Ex.
+			1. Make First File Which Declare All About Custom Event Defination By Extend EventManagerPlugin.(@Injectable,Constructor, Override Support or EventListner, Return Must be)
+			
+			LongP.ts
+				import { Injectable, ListenerOptions } from "@angular/core";
+				import { EventManagerPlugin } from "@angular/platform-browser";
+
+				@Injectable()
+				export class LongP extends EventManagerPlugin{
+				  constructor(){
+					super(document);
+				  }
+
+				  override supports(eventName: string): boolean {
+					  return eventName == 'Longpress';
+				  }
+
+				  override addEventListener(element: HTMLElement, eventName: string, handler: Function, options?: ListenerOptions): Function {
+					  let timeout : any;
+
+					  const OnDown=()=>{
+						timeout = setTimeout(() => handler(), 1000);
+					  }
+					  const OnUp=()=>{
+						clearTimeout(timeout);
+					  }
+
+					  element.addEventListener('mousedown',OnDown);
+					  element.addEventListener('mouseup',OnUp);
+
+					  return()=>{
+						element.removeEventListener('mousedown',OnDown);
+						element.removeEventListener('mouseup',OnUp);
+					  }
+
+				  }
+				}
+				
+				Main.ts
+					bootstrapApplication(App,{
+					  providers:[{
+						provide : EVENT_MANAGER_PLUGINS,
+						useClass : LongP,
+						multi : true
+					  }]
+					});
+				
+				App.ts
+					export class App {
+						IsAlive = false;
+						showMessage() {
+						  this.IsAlive = true
+						}
+					  }
+					  
+				App.html
+					<button [disabled]="IsAlive" (Longpress)="showMessage()">Dont Press Longer 1 second</button>
+				// here we make a when the user press the button over 1 or more second then button is disabled automatic.
+				
+○ Two-Way Binding : 
+	- Two-Way Binding is a What , Data is Pass From componanent to template or template to componanent, when the componanent value change then template value also automatic change as same aa apply in componanent or template.
+	- [(ngmodel)] Is Used For Two Day Binding.
+	
+	Ex.
+		1.Two-way binding with form controls:
+			import { Component } from '@angular/core';
+			import { FormsModule } from '@angular/forms';
+			@Component({
+			  imports: [FormsModule],
+			  template: `
+				<main>
+				  <h2>Hello {{ firstName }}!</h2>
+				  <input type="text" [(ngModel)]="firstName" />
+				</main>
+			  `
+			})
+			export class AppComponent {
+			  firstName = 'Ada';
+			}
+			
+		2.Two-way binding between components :
+			child componanent:
+				// './counter/counter.component.ts';
+				import { Component, model } from '@angular/core';
+				@Component({
+				  selector: 'app-counter',
+				  template: `
+					<button (click)="updateCount(-1)">-</button>
+					<span>{{ count() }}</span>
+					<button (click)="updateCount(+1)">+</button>
+				  `,
+				})
+				export class CounterComponent {
+				  count = model<number>(0);
+				  updateCount(amount: number): void {
+					this.count.update(currentCount => currentCount + amount);
+				  }
+				} //  here model is the two data binding signal which is helping for updating child as well as parent.
+				
+			Parent componanent :
+				// ./app.component.ts
+				import { Component } from '@angular/core';
+				import { CounterComponent } from './counter/counter.component';
+				@Component({
+				  selector: 'app-root',
+				  imports: [CounterComponent],
+				  template: `
+					<main>
+					  <h1>Counter: {{ initialCount }}</h1>
+					  <app-counter [(count)]="initialCount"></app-counter>
+					</main>
+				  `,
+				})
+				export class AppComponent {
+				  initialCount = 18;
+				} // use the [()] for two way data binding.
+				
+○ Control flow :
+		- Constrol flow meaning that, Conditionally rendering Like Specific Value change that time render specific componanent etc..
+		- Include the @if-else, @for @empty,@switch.
+		
+		1)Ex.
+			Conditionally display content with @if, @else-if and @else
+			ts :
+			@Component({
+			  selector: 'app-root',
+			  templateUrl: './app.html'
+			})
+			export class AppComponent {
+			  isLoggedIn = false;
+			}
+			
+			Html : 
+			@if (isLoggedIn) {
+				<h3>Welcome User</h3>
+			} @else {
+			  <h3>Please Login First</h3>
+			}
+		
+			Referencing the conditional expression's result
+			The @if conditional supports saving the result of the conditional expression into a variable for reuse inside of the block.
+			
+			Ex.
+				@if (user.profile.settings.startDate; as startDate) {
+				  {{ startDate }}
+				}
+		
+		2) Repeat content with the @for block : 
+			
+			Ex.
+				ts :
+				@Component({
+				  selector: 'app-root',
+				  templateUrl: './app.html'
+				})
+				export class AppComponent {
+				  users = [
+					{ id: 1, name: "Sujal" },
+					{ id: 2, name: "Jay" },
+					{ id: 3, name: "Raj" },
+				  ];
+				}
+				
+				html:
+
+				<h4>User List:</h4>
+				@for (u of users; track u.id) {
+				  <p>{{ u.id }} - {{ u.name }}</p>
+				}
+				
+			Contextual variables in @for blocks
+				Inside @for blocks, several implicit variables are always available:
+
+				Variable	Meaning
+				$count	Number of items in a collection iterated over
+				$index	Index of the current row
+				$first	Whether the current row is the first row
+				$last	Whether the current row is the last row
+				$even	Whether the current row index is even
+				$odd	Whether the current row index is odd
+			Ex.
+				@for (item of items; track item.id; let idx = $index, e = $even) {
+				  <p>Item #{{ idx }}: {{ item.name }}</p>
+				}
+
+			Providing a fallback for @for blocks with the @empty block
+				Ex.
+					@for (item of items; track item.name) {
+					  <li> {{ item.name }}</li>
+					} @empty {
+					  <li> There are no items. </li>
+					}// if the for loop has no data the @empty render
+			
+		3) Ex.
+			Conditionally display content with the @switch block : 
+				ts :
+				@Component({
+				  selector: 'app-root',
+				  templateUrl: './app.html'
+				})
+				export class AppComponent {
+					status = 'loading';
+				}
+				
+				html :
+				@switch (status) {
+				  @case ('loading') {
+					<p>Loading...</p>
+				  }
+				  @case ('ready') {
+					<p>Ready to use!</p>
+				  }
+				  @default {
+					<p>Unknown Status</p>
+				  }
+				} // here if the value is Loading then case Loading Render Other wise other render or bedefault is render is @default.
+				
+				
+○ Pipes :
+		- Pipes are a special operator in Angular template expressions that allows you to transform data declaratively in your template. Pipes let you declare a transformation function once and then use that transformation across multiple templates. Angular pipes use the vertical bar character (|).
+		
+		Ex.
+			@Component({
+			  selector: 'app-root',
+			  imports: [CurrencyPipe, DatePipe, TitleCasePipe],
+			  template: `
+				<main>
+				   <!-- Transform the company name to title-case and
+				   transform the purchasedOn date to a locale-formatted string -->
+			<h1>Purchases from {{ company | titlecase }} on {{ purchasedOn | date }}</h1>
+					<!-- Transform the amount to a currency-formatted string -->
+				  <p>Total: {{ amount | currency }}</p>
+				</main>
+			  `,
+			})
+			export class ShoppingCartComponent {
+			  amount = 123.45;
+			  company = 'acme corporation';
+			  purchasedOn = '2024-07-08';
+			}
+			
+			output :
+				<h1>Purchases from Acme Corporation on Jul 8, 2024</h1>
+				<p>Total: $123.45</p>
+		
+		◘ Built-in Pipes :
+			- it's buit in pipes that help to perform multiple transformation like uppercase, Date, lowercase, tittlecase, slice etc..
+			
+			| Pipe Name          | Description | ------------------ | ------------------------------------------------------------------ |
+			| **AsyncPipe**      | Promise અથવા Observable માંથી value auto subscribe કરીને વાંચે છે. |
+			| **CurrencyPipe**   | Number ને currency format માં બતાવે (locale મુજબ).                 
+			| **DatePipe**       | Date ને locale rules મુજબ format કરે છે.                           
+			| **DecimalPipe**    | Number ને decimal-point સાથે formatted string માં ફેરવે છે.        
+			| **I18nPluralPipe** | Plural words (singular/plural) locale મુજબ બદલવા માટે.             
+			| **I18nSelectPipe** | Key આધારિત custom string select કરવા માટે.                        
+			| **JsonPipe**       | Object ને JSON string રૂપે બતાવે (debugging માટે).                 
+			| **KeyValuePipe**   | Object અથવા Map ને key-value pairs ની array માં convert કરે છે.    |
+			| **LowerCasePipe**  | Text ને lowercase માં ફેરવે છે.                                    
+			| **PercentPipe**    | Number ને percentage format માં દેખાડે છે.                         
+			| **SlicePipe**      | Array અથવા String માંથી ચોક્કસ portion (slice) કાઢવા માટે.         
+			| **TitleCasePipe**  | Text ને Title Case માં ફેરવે છે.                                   
+			| **UpperCasePipe**  | Text ને uppercase માં ફેરવે છે.                                    
+	
+		Ex.
+			Combining multiple pipes in the same expression
+				<p>The event will occur on {{ '2024-08-27' | date | uppercase }}.</p>
+			
+			Passing parameters to pipes
+				<p>The event will occur at {{ '2024-08-27' | date:'hh:mm' }}.</p>
+				<p>The event will occur at {{ '2024-08-27' | date:'hh:mm':'UTC' }}.</p>
+			
+			Pipe operator precedence :The pipe operator has lower precedence than other binary operators, including +, -, *, /, %, &&, ||, and ??.
+				<!-- firstName and lastName are concatenated before the result is passed to the uppercase pipe -->
+				{{ firstName + lastName | uppercase }}
+				{{ (isAdmin ? 'Access granted' : 'Access denied') | uppercase }}
+				{{ isAdmin ? 'Access granted' : 'Access denied' | uppercase }}
+				{{ isAdmin ? 'Access granted' : ('Access denied' | uppercase) }}
+				
+		○ Creating custom pipes :
+			- create a user Declare Pipes by making one single file. Fllow Steps:
+				import { Pipe, PipeTransform } from "@angular/core";
+				@Pipe({
+				  name : 'SujalCustom'
+				})
+
+				export class CustomPipe implements PipeTransform{
+				  transform(value: any) {
+					return value.slice(1,5);
+				  }
+				} // here main work is PipeTransform interface which helping to us for custom pipes.
+				
+				html : 
+					<p>{{'Sujalgopani' | SujalCustom}}</p> // it's return slice of main string from 1 to 5.
+				
+			Adding parameters to a custom pipe :
+				import { Pipe, PipeTransform } from "@angular/core";
+				@Pipe({
+				  name : 'SujalCustom'
+				})
+
+				export class CustomPipe implements PipeTransform{
+				  transform(value: any,format:string) {
+					if(format === 'upper'){
+					  return value.toUpperCase();
+					}else{
+					  return value.toLowerCase();
+					}
+				  }
+				} // here format is the parameters varible.
+				
+				html :
+					<p>{{"SujalGopani" | SujalCustom:'upper'}}</p>
+				// here the SujalGopani is coverted in to SUJALGOPANI because of parameters.
+
+	○ Custom Behavior Style :
+		Component :
+			@Component({
+			  selector: 'button[baseButton]',
+			  styleUrl: './parent.css',
+			  standalone : true,
+			   template: `
+			  <ng-content />
+			  `
+			})
+			
+			html:
+				<h1>App Component</h1>
+				<button baseButton>
+				  Sujal <hr>
+				  Gopani <hr>
+				  Surat
+				</button>
+
+Using ViewContainerRef................... 
+
+				
+
+				
