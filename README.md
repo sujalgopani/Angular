@@ -1728,8 +1728,315 @@ Signal : used like a store or set or update value
 				  Surat
 				</button>
 
-Using ViewContainerRef................... 
+---------------
+28/11/2025
+----------
 
-				
+○ Create template fragments with ng-template :
+	- ng-template is a invisible html part which is not shown on a run time.
+	- but when somwthing happen like button click, mouse hover etc that time template render on the render area.
+	- <ng-template></ng-template> is available in the html file and it's reference is Templateref which is available in componanent side.
+	- ng-template :- it's a empty html box when user want that time template render on run time.
+	Ex.(simple Example)
+		App.ts
+		export class AppComponent {
+		  isOnline = true;
 
+		  toggleStatus() {
+			this.isOnline = !this.isOnline;
+		  }
+		}
+			
+		App.html
+			<div>
+			  <h2>User Status:</h2>
+
+			  <ng-container *ngIf="isOnline; else userOffline">
+				<p style="color: green;">🟢 User is Online</p>
+			  </ng-container>
+
+			  <!-- else mate no template -->
+			  <ng-template #userOffline>
+				<p style="color: red;">🔴 User is Offline</p>
+			  </ng-template>
+			</div>
+
+			<button (click)="toggleStatus()">Toggle Status</button>
+			// here by default render the User Online but when the user click button then Rendering is change and render User Offline.
+		
+		Ex. (ngTemplateoutlet)
+			App.ts
+				@Component({
+					selector: 'app-root',
+					imports: [RouterOutlet, ReactiveFormsModule, FormsModule,NgTemplateOutlet],
+					templateUrl: './app.html',
+					styleUrl: './app.css',
+					})
+			App.html
+			<ng-container *ngTemplateOutlet="sj">
+			</ng-container>
+			
+			<ng-template #sj>
+			  <p>testing</p>
+			</ng-template>
+			// ng-container adapt the ng-template
+	
+	○ Getting a reference to a template fragment :
+		- in this, topic Templateref is the reference of the ng-template.
+		- by Templateref we can inject the html template in on the run time.
+		
+		Ex. (simple (Without name))
+			@Component({
+			  /* ... */,
+			  template: `
+				<p>This is a normal element</p>
+
+				<ng-template>
+				  <p>This is a template fragment</p>
+				</ng-template>
+			  `
+			})
+			export class ComponentWithFragment {
+			  templateRef = viewChild<TemplateRef<unknown>>(TemplateRef);
+			}
+			// here template has no name so templateRef is reference to by default first template.
+			
+			
+		Ex. (with the name)
+			@Component({
+			  /* ... */,
+			  template: `
+				<p>This is a normal element</p>
+
+				<ng-template #fragmentOne>
+				  <p>This is one template fragment</p>
+				</ng-template>
+
+				<ng-template #fragmentTwo>
+				  <p>This is another template fragment</p>
+				</ng-template>
+			  `,
+			})
+			export class ComponentWithFragment {
+			  fragmentOne = viewChild<TemplateRef<unknown>>('fragmentOne');
+			  fragmentTwo = viewChild<TemplateRef<unknown>>('fragmentTwo');
+			}// here make a reference by it's name.
+			
+		Ex.(Simple Practical Example Using NgTemplateOutlet)
+			App.ts
+				import { Component, TemplateRef, viewChild } from '@angular/core';
+				@Component({
+				  selector: 'app-root',
+				  templateUrl: './app.component.html'
+				})
+				export class AppComponent {
+
+				  helloTemplate = viewChild<TemplateRef<unknown>>('helloTemplate');
+				  byeTemplate = viewChild<TemplateRef<unknown>>('byeTemplate');
+
+				  currentTemplate!: TemplateRef<any>;
+
+				  show(num: number) {
+					this.currentTemplate = num === 1 ? this.helloTemplate()! : this.byeTemplate()!;
+				  }
+				}
+			
+			App.html
+				<button (click)="show(1)">Show First Template</button>
+				<button (click)="show(2)">Show Second Template</button>
+
+				<ng-container *ngTemplateOutlet="currentTemplate"></ng-container>
+
+				<ng-template #helloTemplate>
+				  <h3>👋 Hello Sujal!</h3>
+				</ng-template>
+
+				<ng-template #byeTemplate>
+				  <h3>👋 Goodbye Sujal!</h3>
+				</ng-template>
+
+
+	○ Using ViewContainerRef :
+		- Ex.
+			@Component({
+			  /* ... */,
+			  selector: 'component-with-fragment',
+			  template: `
+				<h2>Component with a fragment</h2>
+				<ng-template #myFragment>
+				  <p>This is the fragment</p>
+				</ng-template>
+				<my-outlet [fragment]="myFragment" />
+			  `,
+			})
+			export class ComponentWithFragment { }
+			@Component({
+			  /* ... */,
+			  selector: 'my-outlet',
+			  template: `<button (click)="showFragment()">Show</button>`,
+			})
+			export class MyOutlet {
+			  private viewContainer = inject(ViewContainerRef);
+			  fragment = input<TemplateRef<unknown> | undefined>();
+			  showFragment() {
+				if (this.fragment()) {
+				  this.viewContainer.createEmbeddedView(this.fragment());
+				}
+			  }
+			}
+			
+○ Grouping elements with ng-container :
+	- ng-container is the one virtual grouping tag in the html file, means ng-container is not visible in the html file but is available inside the file.
+	- we can apply Group elements, Apply structural directives (*ngIf, *ngFor), Avoid creating extra HTML tags
+	
+	Ex. simple
+		<!-- Component template -->
+		<section>
+		  <ng-container>
+			<h3>User bio</h3>
+			<p>Here's some info about the user</p>
+		  </ng-container>
+		</section>
+
+		<!-- Rendered DOM -->
+		<section>
+		  <h3>User bio</h3>
+		  <p>Here's some info about the user</p>
+		</section>
+		
+	○ Using <ng-container> to display dynamic contents :
+		- make a display dynamic componanent on html page by using ng-container NgComponentOutlet.
+		
+		Ex.
+			@Component({
+			  template: `
+				<h2>Your profile</h2>
+				<ng-container [ngComponentOutlet]="profileComponent()" />
+			  `
+			})
+			export class UserProfile {
+			  isAdmin = input(false);
+			  profileComponent = computed(() => this.isAdmin() ? AdminProfile : BasicUserProfile);
+			}// here isAdmin when true then render AdminProfile otherwise BasicUserProfile.
+			
+	○ Rendering template fragments :
+		- render dynamic template on the run time with the help of the ng-container and NgTemplateOutlet.
+		- it's work on template side working not a componanent.
+		
+		Ex.
+			@Component({
+			  template: `
+				<h2>Your profile</h2>
+				<ng-container [ngTemplateOutlet]="profileTemplate()" />
+				<ng-template #admin>This is the admin profile</ng-template>
+				<ng-template #basic>This is the basic profile</ng-template>
+			  `
+			})
+			// here ng-container is virtual grouping tag, ng-template is a unvisible html render componanent.[ngTemplateoutlet] is a fill or inject ng-template.
+			
+			export class UserProfile {
+			  isAdmin = input(false);
+			  adminTemplate = viewChild('admin', {read: TemplateRef});
+			  or
+			  adminTemplate = viewChild<Templateref<unknow>>('admin');
+			  
+			  basicTemplate = viewChild('basic', {read: TemplateRef});
+			  or
+			  adminTemplate = viewChild<Templateref<unknow>>('basic');
+			  // above both wrriten code is right but stytle is deferent
+			  profileTemplate = computed(() => this.isAdmin() ? this.adminTemplate() : this.basicTemplate());
+			}
+			// here Templateref is a make reference to html ng-template.
+			
+	○ Using <ng-container> with structural directives :
+		- apply the if condition or apply for loop on the ng-container.
+		
+		Ex.
+			<ng-container *ngIf="permissions == 'admin'">
+			  <h1>Admin Dashboard</h1>
+			  <admin-infographic></admin-infographic>
+			</ng-container>
+			// here visible only <h1> or admin-infographic componanent with if condition if permissions are == admin then is's visible otherwise not.
+			
+			<ng-container *ngFor="let item of items; index as i; trackBy: trackByFn">
+			  <h2>{{ item.title }}</h2>
+			  <p>{{ item.description }}</p>
+			</ng-container>
+			// here same ng-container not visible visible only <h2> or <p> apply here for loop.
+			
+	○ Using <ng-container> for injection :
+		- in injection point, ng-container is actual not visible but when the dependency apply on this ng-container so it's automatically consume parent level.
+		- suppose in the ng-container have app-parent, or app-child so if ng-container have DI(dependency Injection) so ng-container is automatic consider as a parent level and app-parent, app-child as child.
+		
+		Ex.
+			theme.directive.ts
+				import { Directive } from '@angular/core';
+
+				@Directive({
+				  selector: '[theme]',
+				  standalone: true,
+				  inputs: ['mode: theme']   // 👈 very important fix
+				})
+				export class ThemeDirective {
+				  mode: 'light' | 'dark' = 'light';
+				}
+			
+			parent.component.ts
+				import { Component, inject } from '@angular/core';
+				import { ThemeDirective } from '../DI/theme';
+
+				@Component({
+				  selector: 'app-parent',
+				  standalone: true,
+				  template: `
+					<h1>Parent Component → Theme: {{ theme.mode }}</h1>
+				  `
+				})
+				export class Parent {
+				  theme = inject(ThemeDirective);
+				}
+					
+			child.component.ts
+				import { Component, inject } from '@angular/core';
+				import { ThemeDirective } from '../DI/theme';
+
+				@Component({
+				  selector: 'app-child',
+				  standalone: true,
+				  template: `
+					<h2>Child Component → Theme: {{ theme.mode }}</h2>
+				  `
+				})
+				export class ChildComponent {
+				  theme = inject(ThemeDirective);
+				}
+	
+			app.component.html
+				<h1>App Component</h1>
+
+				<!-- Dark Theme Section -->
+				<ng-container theme="dark">
+				  <app-parent></app-parent>
+				  <app-child></app-child>
+				</ng-container>
+
+				<hr>
+
+				<!-- Light Theme Section -->
+				<ng-container theme="light">
+				  <app-parent></app-parent>
+				  <app-child></app-child>
+				</ng-container>
+
+				<router-outlet />
 				
+			FINAL OUTPUT (CORRECT)
+				App Component
+				Parent Component → Theme: dark
+				Child Component → Theme: dark
+				-------------------------------
+				Parent Component → Theme: light
+				Child Component → Theme: light
+			// here theme is the main parent file it's inject in the parent or child file also so now, in ng-container parent, child are imported in the app but theme are injected also in both file parent & child so here ng-container are automatically become a parent.
+		
+	variable in the template....
