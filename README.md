@@ -2038,5 +2038,288 @@ Signal : used like a store or set or update value
 				Parent Component → Theme: light
 				Child Component → Theme: light
 			// here theme is the main parent file it's inject in the parent or child file also so now, in ng-container parent, child are imported in the app but theme are injected also in both file parent & child so here ng-container are automatically become a parent.
+	
+-------------
+01/12/2025
+----------
+○ variable in the template :
+	- Variable is the used for a store the data from ts file, and it's define with @let, it's also updatable.
+		@let name = user.name;
+		@let greeting = 'Hello, ' + name;
+		@let data = data$ | async;
+		@let pi = 3.14159;
+		@let coordinates = {x: 50, y: 100};
+		@let longExpression = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit ' + 'sed do eiusmod tempor incididunt ut labore et dolore magna ' + 'Ut enim ad minim veniam...';
 		
-	variable in the template....
+		Ex.	
+			componanent :
+			@let name = user.name;
+			
+			Html : 
+			<h2>welcome :  {{ name }}</h2>
+
+	○ Variable scope :
+		- @let declarations are scoped to the current view and its descendants. Angular creates a new view at component boundaries and wherever a template might contain dynamic content, such as control flow blocks, @defer blocks, or structural directives.
+		
+		Ex.
+			@let topLevel = value;
+			<div>
+			  @let insideDiv = value;
+			</div>
+			{{topLevel}} <!-- Valid -->
+			{{insideDiv}} <!-- Valid -->
+			@if (condition) {
+			  {{topLevel + insideDiv}} <!-- Valid -->
+			  @let nested = value;
+			  @if (condition) {
+				{{topLevel + insideDiv + nested}} <!-- Valid -->
+			  }
+			}
+			{{nested}} <!-- Error, not hoisted from @if --> // it's not accesible because the nested is declare in the under if condition so it's not access out of if border range.
+		
+	○ Full syntax :
+		The @let syntax is formally defined as:
+
+		The @let keyword.
+		Followed by one or more whitespaces, not including new lines.
+		Followed by a valid JavaScript name and zero or more whitespaces.
+		Followed by the = symbol and zero or more whitespaces.
+		Followed by an Angular expression which can be multi-line.
+		Terminated by the ; symbol.
+	
+	○ Declaring a template reference variable :
+		- in this topic we make a variale with # sign which meaning, we can access variable direct in to ts file.
+		Ex.
+			ts.file
+				export class App {
+				   show(msg : any){
+					alert(`Hellow ${msg}`);
+				   }
+				  }
+			
+			html :
+				<input #taskInput placeholder="Enter task name">
+				<button (click)="show(taskInput.value)">hShow</button>
+			// here taskInput variable access direct to ts file without declare anything, here input value is accesible by just it's variable name.
+			
+	○ Assigning values to template reference variables :
+		- make a reference to other componanent and access those componanent method, or variable or anything to current componanent.
+		- like a import our child componanent in the parent componanent and gives to one reference variable to child componanent and eassy accesible all properties to parent componanent.
+		 Ex.
+			App.ts
+				export class App  {
+				  childRef = viewChild<Parent>('childRef');
+
+				  callChild() {
+					this.childRef()?.showMessage();
+				  }
+				}
+			
+			html : 
+				<app-parent #childRef></app-parent>
+				<button (click)="callChild()">Call Child Method</button>
+				// here import parent componanent and give the reference variable and access the that componanent in to parent componanent by viewchid.
+				
+	○ Using template reference variables with queries :
+		- in the same template when we want to access value like a input so it's eassy by '#' but,
+		- when we want to access value from template to componanent so it's not possible by '#' only but we use a @ViewChild('#') name! : ElementRef, so here name is make as a intance of the '#',
+		Ex.
+			Direct Access :
+				ts.file 
+				show(msg : any){
+					alert(msg);
+				}
+				
+				html.file 
+					<input placeholder="Enter Name :" #inp/>
+					<button (click)="Show(inp.value)">ShowMe</button>
+					// it's cover in above side also but again cover, inp.value is direct accesible in the same template.
+					
+			By Referencing Access :
+				ts.file 
+					 export class App  {
+					  @ViewChild('inp') intp! : ElementRef;
+					  @ViewChild('result') txtarea! : ElementRef;
+					  Show() {
+						  this.txtarea.nativeElement.value = this.intp.nativeElement.value;
+						}
+					} // here make a inp and result reference to componanent by ViewChild and elementRef. now by this we access all property of reference.
+				
+				html.file 
+						<input placeholder="Enter Name :" #inp/> // give varible name wirth '#'
+
+						<textarea #result></textarea> // same give variable name by '#'
+						<button (click)="Show()">ShowMe</button>// click show event
+				// so here not possible to accesible the value from template to componanent so used a viewChild and elementRef.
+				
+○ Deferred loading with @defer :
+	- Deferrable views, also known as @defer blocks, reduce the initial bundle size of your application by deferring the loading of code that is not strictly necessary for the initial rendering of a page. This often results in a faster initial load and improvement in Core Web Vitals (CWV), primarily Largest Contentful Paint (LCP) and Time to First Byte (TTFB).
+	Ex.
+		@defer {
+		  <large-component />
+		}
+
+	○ How to manage different stages of deferred loading :
+		- it's have to sub blocks which is help to improve the user experience.
+		
+		1. @defer :
+			- this is a primary block to define the Deferred.
+				Ex.	
+					@defer {
+					  <large-component />
+					}
+		2. @placeholder :
+			- The @placeholder is an optional block that declares what content to show before the @defer block is triggered.
+			Ex.
+				@defer {
+				  <large-component />
+				} @placeholder {
+				  <p>Placeholder content</p>
+				} // during the loading large-component placeholder is shown on the html page like Loding..., Or any loader.
+				
+			Ex.(show placeholder minimum specific ms(mimisecond), or s(second))
+				@defer {
+				  <large-component />
+				} @placeholder (minimum 500ms) {
+				  <p>Placeholder content</p>
+				}// here minimum 500ms placeholder is shown after main loaded componanent is see on the html page.
+				
+		
+		3. @loading :
+			- The @loading block is an optional block that allows you to declare content that is shown while deferred dependencies are loading. It replaces the @placeholder block once loading is triggered.
+			
+			Ex.
+				@defer {
+				  <large-component />
+				} @loading {
+				  <img alt="loading..." src="loading.gif" />
+				} @placeholder {
+				  <p>Placeholder content</p>
+				}
+			
+			Ex.(After, Minimum)
+				@defer {
+				  <large-component />
+				} @loading (after 100ms; minimum 1s) {
+				  <img alt="loading..." src="loading.gif" />
+				}// here after is delay time and minimum is duration time.
+				-> after : after 100ms will loading is affect on html page.
+				-> minimum : total or minimum 1 second time duration @loading is affect on html page.
+			
+		4. @error :
+			- During loading the componanent if any error are occur then @error block are render.
+				Ex.
+					@defer {
+					  <large-component />
+					} @error {
+					  <p>Failed to load large component.</p>
+					} // if any error happen then @error render on the html page.
+					
+	
+	○ Controlling deferred content loading with triggers :
+		- Many type of the trigger are available in angular, it's affect when the user react to application. like when user hover, click button then componanent loaded otherwise not loaded.
+		
+		Trigger :
+			
+			Trigger		Description
+			idle		Triggers when the browser is idle(free).
+			viewport	Triggers when specified content enters the viewport
+			interaction	Triggers when the user interacts with specified element
+			hover		Triggers when the mouse hovers over specified area
+			immediate	Triggers immediately after non-deferred content has finished 	
+						rendering(click or keyboard happening by user.)
+			timer		Triggers after a specific duration
+			
+		Ex.	
+			1.idle :
+				- The idle trigger loads the deferred content once the browser has reached an idle state, based on requestIdleCallback. This is the default behavior with a defer block.
+
+				<!-- @defer (on idle) -->
+				@defer {
+				  <large-cmp />
+				} @placeholder {
+				  <div>Large component placeholder</div>
+				}
+				
+			2.viewport :
+				- The viewport trigger loads the deferred content when the specified content enters the viewport using the Intersection Observer API. Observed content may be @placeholder content or an explicit element reference.
+
+				By default, the @defer watches for the placeholder entering the viewport. Placeholders used this way must have a single root element.
+
+					@defer (on viewport) {
+					  <large-cmp />
+					} @placeholder {
+					  <div>Large component placeholder</div>
+					}
+					
+					<div #greeting>Hello!</div>
+					@defer (on viewport(greeting)) {
+					  <greetings-cmp />
+					} // greetings-cmp when render when user scrolled down to <div #greeting>
+					
+			3.interaction :
+				- The interaction trigger loads the deferred content when the user interacts with the specified element through click or keydown events.
+				
+				@defer (on interaction) {
+				  <large-cmp />
+				} @placeholder {
+				  <div>Large component placeholder</div>
+				} // large-cmp is loaded when the user click the placeholder text.
+				
+				<div #greeting>Hello!</div>
+				@defer (on interaction(greeting)) {
+				  <greetings-cmp />
+				}// large-cmp is loaded when the user click the #greeting div text.
+				
+			4.hover :
+				-The hover trigger loads the deferred content when the mouse has hovered over the triggered area through the mouseover and focusin events. 
+				
+				@defer (on hover) {
+				  <large-cmp />
+				} @placeholder {
+				  <div>Large component placeholder</div>
+				} // large-cmp loaded when the user hover on placeholder.
+				
+				<div #greeting>Hello!</div>
+				@defer (on hover(greeting)) {
+				  <greetings-cmp />
+				} // large-cmp loaded when the user hover on <div>.
+		
+			5.immediate :
+				The immediate trigger loads the deferred content immediately. This means that the deferred block loads as soon as all other non-deferred content has finished rendering.
+
+				@defer (on immediate) {
+				  <large-cmp />
+				} @placeholder {
+				  <div>Large component placeholder</div>
+				} // loaded immediate without waiting anybudy !.
+				
+			6.timer :
+				The timer trigger loads the deferred content after a specified duration.
+
+				@defer (on timer(500ms)) {
+				  <large-cmp />
+				} @placeholder {
+				  <div>Large component placeholder</div>
+				} // 500ms after loaded.
+				
+		○ when : 
+			The when trigger accepts a custom conditional expression and loads the deferred content when the condition becomes truthy.
+
+			@defer (when condition) {
+			  <large-cmp />
+			} @placeholder {
+			  <div>Large component placeholder</div>
+			} // conditional based rendering.
+			
+		○ Prefetching data with prefetch :
+		 - when we want to data is loaded on background and it's load and ready to load.
+		 @defer (on interaction; prefetch on idle) {
+			  <large-cmp />
+			} @placeholder {
+			  <div>Large component placeholder</div>
+			} // it's mean loaded on interaction, and prefetch with idle(when browser is free).
+			
+			Expression Syntax............
+						
+
