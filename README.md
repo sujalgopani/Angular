@@ -2320,6 +2320,404 @@ Signal : used like a store or set or update value
 			  <div>Large component placeholder</div>
 			} // it's mean loaded on interaction, and prefetch with idle(when browser is free).
 			
-			Expression Syntax............
+			
+-------------
+02/12/2025
+----------
+
+○ Expression Syntax :
+	- Angular Expression Is A Same As A JavaScript Like But Not It's A Subset Of JavaScript.
+	
+	Expression Mainlly Used Like This :
+		{{ user.name }}
+		{{ price * qty }}
+		{{ isActive ? 'Yes' : 'No' }}
+		
+		1. Value Literals :
+			| Type                | Examples              |
+			| ------------------- | --------------------- |
+			| **String**          | `'Hello'`, `"World"`  |
+			| **Boolean**         | `true`, `false`       |
+			| **Number**          | `123`, `3.14`         |
+			| **Object**          | `{name: 'Alice'}`     |
+			| **Array**           | `['Onion', 'Cheese']` |
+			| **null**            | `null`                |
+			| **Template string** | `` `Hello ${name}` `` |
+			| **RegExp**          | `/\d+/`               |
+		
+		*Bingint Is Not Supported In Angular Application*
+		
+		2. Globals in Angular Expressions :
+			- $any() Is A Used As a Globals Expression like $any(value).
+				○ Other JavaScript globals NOT allowed:
+					Number
+					Boolean
+					parseInt
+					NaN
+					Infinity
+					Math.random
+					Date
+					(Almost everything else)
+					
+		3. Local Variables (Special $ variables) :
+			- In The Angular @for, @switch Provide Own Special Variable.
+			Ex.
+				@for (item of items; track $index) {
+				  {{ $index }} – {{ item }}
+				}
+				
+				Common $-variables in loops:
+					1.$index
+					2.$count
+					3.$first
+					4.$last
+					5.$even
+					6.$odd
+		
+		4. Supported Operators :
+			✔ Arithmetic
+			+, -, *, /, %, **
+
+			✔ Parentheses
+			(a + b) * c
+
+			✔ Conditional (ternary)
+			age > 18 ? 'Adult' : 'Minor'
+
+			✔ Logical operators
+			&&, ||, !
+
+			✔ Comparison
+			<, >, <=, >=, ==, !=, ===, !==
+
+			✔ Nullish coalescing
+			{{ name ?? 'Guest' }}
+
+			✔ Assignment operators
+			=, +=, -=, *=, /=, etc.
+
+			✔ Property access
+			person['name']
+			
+			✔ Pipe operator
+			{{ price | currency }}
+
+			✔ Optional chaining (Angular version)
+			user?.address?.city
+			
+			✔ Non-null assertion (!)
+			user!.name
+		
+		○ Unsupported Operators in Angular
+			❌ Bitwise operators
+			&, |, ^, ~, <<, >>, etc.
+
+			❌ Object destructuring
+				Not allowed:
+				const { name } = user   ❌
+				
+		
+		Declarations	
+			Ex.
+				Variables	let label = 'abc', const item = 'apple'
+				Functions	function myCustomFunction() { }
+				Arrow 		Functions	() => { }
+				Classes		class Rectangle { }
+
+○ Directives :
+	- Directives are classes that help to apply additional behavior in to element in your angular application.
+	
+	1.Built-in directives :
+		- Some Directive Are Buit In The Angular Which Is Made By Developer In Past Time
+		
+		Ex. 
+			
+			Directive Types			Details
+			Components			  -> Used with a template. This type of directive is the most common directive type.
+
+			Attribute directives  -> Change the appearance or behavior of an element, component, or another directive.
+
+			Structural directives -> Change the DOM layout by adding and removing DOM elements.
+	
+	○ Built-in attribute directives :
+		- Attribute directives listen to and modify the behavior of other HTML elements, attributes, properties, and components.
+
+		+-----------------+ +-------+
+		|Common directives| |Details|
+		+-----------------+ +-------+
+		|NgClass		  |	|	Adds and removes a set of CSS classes.
+		|NgStyle		  |	|	Adds and removes a set of HTML styles.
+		|NgModel		  |	|	Adds two-way data binding to an HTML form
+		+-----------------+ +--------
+		
+		
+		1. Adding and removing classes with NgClass :
+			- Add or remove multiple CSS classes simultaneously with ngClass.
+			- Adding NgClass To ts file first.
+			Ex.
+				App.ts :
+					export class App  {
+					  currentStyle: Record<string, boolean> = {};
+					  isUnchanged: boolean = true;
+					  canSave: boolean = true;
+					  isSpecial: boolean = true;
+					  
+					  setCurrentStyle() {
+						this.currentStyle = {
+						  saveable: this.canSave,       // true → class apply
+						  modified: !this.isUnchanged,  // !true → false → class NOT apply
+						  special: this.isSpecial,      // true → class apply
+						};
+					  }
+
+					  Default() {
+						this.currentStyle = {
+						  saveable: false,       // true → class apply
+						  modified: false,  // !true → false → class NOT apply
+						  special: false,      // true → class apply
+						};
+					  }
+					}
+
+				App.css :
+					.saveable {
+					  color: green;
+					}
+					.modified {
+					  font-weight: bold;
+					}
+					.special {
+					  background: yellow;
+					}
+
+				App.html :
+					<div (mouseenter)="setCurrentStyle()" (mouseleave)="Default()" [ngClass]="currentStyle">Testing !</div>
+				// here we make one example which is give to information for Where is NgClass Apply on Angular Application.
+				// When you Hover the Div then apply 3 class or mouse leave from area then automatic remove that 3 class.
+				
+		2. NgStyle :
+			- NgStyle Is Used For a adding or removing the inline style.
+			- Import NgStyle First.
+			Ex.
+				App.ts :
+					export class App  {
+					  currentStyle: Record<string, string> = {};
+					  isUnchanged: boolean = false;
+					  canSave: boolean = false;
+					  isSpecial: boolean = false;
+
+					  setCurrentStyle() {
+						this.currentStyle = {
+						  'font-style': this.canSave ? 'italic' : 'normal',
+						  'font-weight': !this.isUnchanged ? 'bold' : 'normal',
+						  'font-size': this.isSpecial ? '24px' : '12px',
+						};
+					  }
+					}
+
+				App.html :
+					<div [ngStyle]="currentStyle" (mouseenter)="setCurrentStyle()">Testing !</div>
+				// here when the user hover the div when inline css applied.
+	
+	○ Hosting a directive without a DOM element :
+		
+		○ <ng-container> :
+			- Ng container Is the grouping element that is not visible in the html or angular do not inject into html code.
+			- ng container is a mainlly work for a conditionally rendering element. by *ngif, *for etc..
+			
+			Ex.
+				App.ts :										
+					export class App {
+					  hero = false;
+					  name = 'Angular';
+					}
+					
+				App.html :
+					<p>
+					  I turned to 
+					  <ng-container *ngIf="hero">
+						{{name}}
+					  </ng-container>
+					  technology
+					</p>
+				// here when the hero is true then name value is print otherwise is not show but not affect in the html page beacause of ng-container.
+				
+		○ Example Of When the User Click The Checkbox For Not Show Surat City When Conditionally in The Select Element Surat Not Visible And When User Not Checked The Checkbox	then All City areVisible : 
+			Ex.	
+				App.ts	
+					export class App {
+					  showSad: boolean = false;
+
+					  selectval = [
+						{id: 101,City:'Surat'},
+						{id:102,City:'Rajkot'},
+						{id:103,City:'Bhavnagar'},
+						{id:104,City:'Botad'},
+						{id:105,City:'Porbandar'},
+						{id:106,City:'Bharuch'},
+					  ];
+
+					  changeshowsad() {
+						this.showSad = !this.showSad;
+						console.log(this.showSad);
+					  }
+					}
+			
+				App.html :
+					<div>
+					  Tick Surat To Not show Surat :
+					  <input type="checkbox" id="cksurat" [checked]="showSad" (change)="changeshowsad()"  />
+					  <label for="cksurat">Not Show Surat</label>
+					</div>
+
+
+					<p *ngFor="let i of selectval">
+					  <ng-container *ngIf="!showSad || i.City !=='Surat'">
+						{{i.City}}
+					  </ng-container>
+					</p>
+					// here if the user tick then surat not visible otheriwse visible.
+					
+	○ Attribute directives :
+		- Change the appearance or behavior of DOM elements and Angular components with attribute directives.
+		
+		○ Building an attribute directive :
+			1. To create a directive, use the CLI command ng generate directive.
+				Ex. -> ng generate directive highlight(directive's name)
+				
+				1.1. Directive First time Make like :
+					import {Directive} from '@angular/core';
+					@Directive({
+					  selector: '[appHighlight]',
+					})
+					export class HighlightDirective {}
+					// here @Directive selector is a name of css attribute which we used on the html element like a componanent selector.
+			
+			2. Import ElementRef from @angular/core. ElementRef grants direct access to the host DOM element through its nativeElement property.
+			
+			3. Add ElementRef in the directive's constructor() to inject a reference to the host DOM element, the element to which you apply appHighlight.
+			
+			4. Add logic to the HighlightDirective class that sets the background to yellow.
+			
+			Ex. (Simple Example)
+				import {Directive, ElementRef, inject} from '@angular/core';
+				@Directive({
+				  selector: '[appHighlight]',
+				})
+				export class HighlightDirective {
+				  private el = inject(ElementRef);
+				  constructor() {
+					this.el.nativeElement.style.backgroundColor = 'yellow';
+				  }
+				} // here we make, where we placed the appHighlight there backgroundColor is convert in to yellow.
+				
+				In the app Or Any html File :
+					<p app:Highlight>This is invalid</p>
+					// here <p></p> is converted into with backgroundColor yellow.
+				
+		○ Handling user events :
+			- This section shows you how to detect when a user mouses into or out of the element and to respond by setting or clearing the highlight color.
+			
+			1. Configure host event bindings using the host property in the @Directive() decorator.
+			
+				import {Directive, ElementRef, inject} from '@angular/core';
+				@Directive({
+				  selector: '[appHighlight]',
+				  host: {
+					'(mouseenter)': 'onMouseEnter()',
+					'(mouseleave)': 'onMouseLeave()',
+				  },
+				})
+				export class HighlightDirective {
+				  private el = inject(ElementRef);
+				  onMouseEnter() {
+					this.highlight('yellow');
+				  }
+				  onMouseLeave() {
+					this.highlight('');
+				  }
+				  private highlight(color: string) {
+					this.el.nativeElement.style.backgroundColor = color;
+				  }
+				}    
+				// here we make a when user mouse is hovered in to area then backgroundColor is yellow and after leave the area then simple white it's possible with the host.
+		
+		○ Passing values into an attribute directive :
+			- When we want to directive value passed on the main html page load time then we apply the input() in the directive file code.
+			- other side we use the constructor use but here we use the ngOnInit() method.
+			 
+			Ex.
+				Highlight.ts
+					import { Directive,ElementRef, inject, input } from '@angular/core';
+					@Directive({
+					  selector: '[appHighlight]'
+					})
+
+					export class Highlight {
+					  appHighlight = input('');  
+					  private p1 = inject(ElementRef);
+					  ngOnInit() {
+						this.p1.nativeElement.style.backgroundColor = this.appHighlight();
+					  }
+					}
+					
+				App.ts :						
+					export class App {
+					  color = 'red';
+					}
+				
+				App.html :
+					<p [appHighlight]="color">Testing</p>
+			
+		○ Setting the value with user input :
+			- Any Conditional if the user wamt to change directive value then do this.
+			Ex.
+				<div>
+				  <input type="radio" name="colors" (click)="color='lightgreen'">Green
+				  <input type="radio" name="colors" (click)="color='yellow'">Yellow
+				  <input type="radio" name="colors" (click)="color='cyan'">Cyan
+				</div> 
+				// other code is same only change app.ts variable value which passed in the directive input.
+				
+		
+		○ Binding to a second property :
+			- Add One More Input for Second Input Binding.
+				Ex.
+					  appHighlight = input('');<-(That is first property)
+					  defaultColor = input('');<-(Now Add one More)
+					  
+					Write In the method Like :
+						onMouseEnter() {
+							this.highlight(this.appHighlight() || this.defaultColor() || 'red');
+						  }
+					// here if the first property not bind then second property can work and also if second property is not bind then third static value is work.
+					
+		
+		○ Deactivating Angular processing with NgNonBindable :
+			- sometime we want to angular can not affect on own html code.
+				Ex. {{6+1}}
+				If We Write This in the html code then angular convert the 7 but we want to angular is not affect here and show this like same {{6+1}} as it is so use NgNonBindable.
+				
+				Ex.
+					<p>{{ 1 + 1 }}</p> // here angular work and convert into 2
+					<p ngNonBindable>{{ 1 + 1 }}</p> // here print as it is.
+				// in short we turn off angular by NgNonBindable attribute.
+				
+				
+○ Structural directives:
+	-
+
+	
+				
+			
+				
+
+
+
+
+
+													
+
+
 						
 
