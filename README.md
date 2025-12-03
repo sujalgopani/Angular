@@ -2222,12 +2222,12 @@ Signal : used like a store or set or update value
 		Trigger :
 			
 			Trigger		Description
+			--------------------------------------------------------------
 			idle		Triggers when the browser is idle(free).
 			viewport	Triggers when specified content enters the viewport
 			interaction	Triggers when the user interacts with specified element
 			hover		Triggers when the mouse hovers over specified area
-			immediate	Triggers immediately after non-deferred content has finished 	
-						rendering(click or keyboard happening by user.)
+			immediate	Triggers immediately after non-deferred content has finished 	rendering(click or keyboard happening by user.)
 			timer		Triggers after a specific duration
 			
 		Ex.	
@@ -2428,16 +2428,20 @@ Signal : used like a store or set or update value
 	- Directives are classes that help to apply additional behavior in to element in your angular application.
 	
 	1.Built-in directives :
-		- Some Directive Are Buit In The Angular Which Is Made By Developer In Past Time
+		- Some Directive Are Buit In The Angular Which Is Made By Developer In Past Time.
 		
 		Ex. 
 			
 			Directive Types			Details
-			Components			  -> Used with a template. This type of directive is the most common directive type.
+			-------------------------------------------------------------
+			Components			  -> Used with a template. This type of 
+									 directive is the most common directive type.
 
-			Attribute directives  -> Change the appearance or behavior of an element, component, or another directive.
+			Attribute directives  -> Change the appearance or behavior of an
+									 element, component, or another directive.
 
-			Structural directives -> Change the DOM layout by adding and removing DOM elements.
+			Structural directives -> Change the DOM layout by adding and
+									 removing DOM elements.
 	
 	○ Built-in attribute directives :
 		- Attribute directives listen to and modify the behavior of other HTML elements, attributes, properties, and components.
@@ -2445,9 +2449,9 @@ Signal : used like a store or set or update value
 		+-----------------+ +-------+
 		|Common directives| |Details|
 		+-----------------+ +-------+
-		|NgClass		  |	|	Adds and removes a set of CSS classes.
-		|NgStyle		  |	|	Adds and removes a set of HTML styles.
-		|NgModel		  |	|	Adds two-way data binding to an HTML form
+		|NgClass		  |	|Adds and removes a set of CSS classes.
+		|NgStyle		  |	|Adds and removes a set of HTML styles.
+		|NgModel		  |	|Adds two-way data binding to an HTML form
 		+-----------------+ +--------
 		
 		
@@ -2705,7 +2709,179 @@ Signal : used like a store or set or update value
 				
 				
 ○ Structural directives:
-	-
+	- Structural directives are directives applied to an <ng-template> element that conditionally or repeatedly render the content of that <ng-template>.
+	- in this topic we cover the how the inject the html in to ng-template by using structural directive.
+	- some built in directive like *ngif,*for,*ngswitch etc are use eassy in the html code With '*'.
+	- without '*' this when we apply the directive in the html code that time angular consider as a attribute directive, same thing used with the '*' so angular consider as a structural directive.
+	Ex.
+		Suppose we have a one directive named : 'select'.
+		When used in the html,
+		
+		<p select>Testing ! </p>
+		// here angular consider this html code as a attribute directive.
+		
+		but,
+		<p *select>Testing ! </p>
+		// here angular consider this line a as a structural directive.
+		// one main thing angular convert this line into
+		<ng-template select>
+			<p>Testing ! </p>
+		</ng-template>
+		
+		-> so both code are same on the compilation time simple <p> with '*' and <ng-template>
+		-> ng-template not visible in the html page when we want to that visible so use TemplateRef with ViewContainerRef.
+		
+		Let's see the one example to better understanding the what is structural directive mean ? here we see custom structural directive.
+		
+		Ex.	
+			import { Directive, ElementRef, inject, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+			
+			class DataBind{
+			  $implicit : string | undefined
+			  tech : string | undefined
+			}
+
+			@Directive({
+			  selector: '[select]'   // structural directive
+			})
+			export class Highlight {
+			 
+			constructor(
+			  private readonly elemetnref : ElementRef, // for access html page
+			  private readonly template : TemplateRef<DataBind>,// for ng-template
+			  private readonly vcr : ViewContainerRef // for inject template into container
+			){}
+
+			  ngOnInit():void{
+				  this.vcr.clear
+				  this.vcr.createEmbeddedView(this.template,{$implicit : 'Sujal',tech : 'Angular'});
+			  }
+			}// this directive help to inject ng-template into ng-container
+			
+			html :
+				<ng-template select let-t="tech" let-u>
+				  <h1>Testing From {{t}} By {{u}}</h1>
+				</ng-template>
+				// in simple ng-template not visible in the html page
+				// but apply select named directive it's visible or inject into container.
+				// also here pass the value from the directive
+				// and if we want to pass value from app.ts then used @Input() in directive file.
+		
+	○ Directive composition API :
+		- when one directive is ready for perform task on component but we want to one directive perform multiple componanent,
+		- that's time indivisual work not possible on multiple componanent and it's also long or lazr way to do work between one directive and multiple componanent.
+		- so here used a 'hostDirectives' is used.
+		- in this simple world one single directive import in the hostDirectives and apply all power of directive in componanent automatically. better understanding with example.
+		
+		Ex.
+			highlight.ts (directive):
+				import { Directive, HostBinding, HostListener} from '@angular/core';
+				@Directive({
+				  selector: '[highlight]',
+				  standalone: true
+				})
+				export class Highlight {
+
+				  @HostBinding('style.background')
+				  bg = 'transparent';
+
+				  @HostListener('mouseenter')
+				  onEnter() {
+					this.bg = 'Yellow';
+				  }
+
+				  @HostListener('mouseleave')
+				  onLeave() {
+					this.bg = 'transparent';
+				  }
+				}
+				
+			Parent.ts (thirld party componanent) :
+				import { Component } from '@angular/core';
+				import { Highlight } from '../Directives/highlight';
+
+				@Component({
+				  selector: 'app-parent',
+				  standalone: true,
+				  template: `<p>Hover me!</p>`,
+				  host: {
+					'style': 'display:block; padding:20px;'
+				  },
+				  hostDirectives: [Highlight]
+				})
+				export class Parent {}
+			
+			app.html :
+				// here on local html we can write manually highlight for perform directive power on local componanent html
+				<h2 highlight>Testing !</h2>
+					
+				// here not write the something like highlight for apply power of componanent.
+				// simple we can add the highlight directive in parent componanent in hostDirectives.
+				<app-parent></app-parent>
+
+		○ Including inputs and outputs :
+			- some condition we pass value in directive from componanent then used the input or output.
+			- simple used in hostDirectives available inputs & outputs.
+			- better understanding by example.
+			Ex.(apply only input on below example)
+				
+				highlight.ts :
+					export class Highlight {
+					  @Input('UserInput') inputval?: string;
+					}
+
+				parent.ts :
+					@Component({
+					  selector: 'app-parent',
+					  standalone: true,
+					  template: `<p>Hover me!</p>`,
+					  host: {
+						'style': 'display:block; padding:20px;'
+					  },
+					  hostDirectives: [{
+						directive : Highlight,
+						inputs : ['UserInput'] // use inputs to give value to directive
+					  }]
+					})
+				
+				app.html :
+					<h2>App Component</h2>
+					
+					// here give the input value by local html 'red'
+					<h2 highlight [UserInput]="'red'">Testing !</h2>
+					
+					// here give the input value by app-parent
+					<app-parent UserInput="pink"></app-parent>
+					<router-outlet></router-outlet>
+
+		○ Dependency Injection :
+			- if any services available in the angular application so by using inject we used the services in the directive.
+			- better  understanding consider the example.
+			Ex.
+				service File :
+					import { Injectable } from '@angular/core';
+					@Injectable({ providedIn: 'root' })
+					export class LoggerService {
+					  log(msg: string) {
+						console.log('Logger:', msg);
+					  }
+					}
+				
+				directive File :
+					// inject manually
+					private logger = inject(LoggerService);
+					 @HostListener('mouseenter')
+					  enter() {
+						this.bg = 'yellow';
+						// injeactable service use method in the directive
+						this.logger.log('Mouse entered from Highlight');
+					  }
+	
+		
+
+
+		
+		
 
 	
 				
