@@ -2876,7 +2876,17 @@ Signal : used like a store or set or update value
 						// injeactable service use method in the directive
 						this.logger.log('Mouse entered from Highlight');
 					  }
-	
+					  
+-------------
+04/12/2025
+----------
+	○ Getting started with NgOptimizedImage :
+		- Normal image injection is not a proper way to work with the angular, but here NgOptimizedImage provide the fill, Priority, ngSrc.
+		- ngSrc => imrove the LCP scrore.
+		- fill => Automatically Put the element in the parent component but parent componanent must be position as a relative, fixed or abosulate.
+		- Priority => It's Attribute describe the information to angular that this image is most important when all image is loade on browser.
+		
+	-- DI Continues.....
 		
 
 
