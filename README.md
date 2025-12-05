@@ -2049,7 +2049,7 @@ Signal : used like a store or set or update value
 		@let data = data$ | async;
 		@let pi = 3.14159;
 		@let coordinates = {x: 50, y: 100};
-		@let longExpression = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit ' + 'sed do eiusmod tempor incididunt ut labore et dolore magna ' + 'Ut enim ad minim veniam...';
+		@let longExpression = 'Lorem ipsum dolor sit amet, constructor adipiscing elit ' + 'sed do eiusmod tempor incididunt ut labore et dolore magna ' + 'Ut enim ad minim veniam...';
 		
 		Ex.	
 			componanent :
@@ -2886,18 +2886,289 @@ Signal : used like a store or set or update value
 		- fill => Automatically Put the element in the parent component but parent componanent must be position as a relative, fixed or abosulate.
 		- Priority => It's Attribute describe the information to angular that this image is most important when all image is loade on browser.
 		
-	-- DI Continues.....
-		
-
-
-		
-		
-
-	
-				
+-------------
+05/12/2025
+----------
+○ DI Continues :
+	- DI Stand for a Dependency Injection In this meaning, Making one service whichi is not able to make own object in componanent, so one angular is make object for those service by calling in component or inject in current componanent.
+	- By Inject We Can Inject Service In Curretn Component,But One Thing Inject Is Used if service class has @Injectable().
+	- DI Is Perofrm Many Way :
+		 // ✅ In class field initializer
+			private service = inject(MyService);
 			
+		// ✅ In constructor body
+		  private anotherService: MyService;
+		  constructor() {
+			this.anotherService = inject(MyService);
+		  }// if used constructor follow this.
+		
+		export const authGuard = () => {
+		  // ✅ In a route guard
+		  const auth = inject(AuthService);
+		  return auth.isAuthenticated(); // Used Injectable Class Method
+		}
+	
+	Ex.
+		Service : // here make one simple service
+			import { Injectable } from '@angular/core';
+				@Injectable({ providedIn: 'root' }) // here root meaning is service intance is make for singleton
+				export class AnalyticsLogger {
+				  trackEvent(category: string, value: string) {
+					console.log('Analytics event logged:', {
+					  category,
+					  value,
+					  timestamp: new Date().toISOString()
+					})
+				  }
+				}
 				
+		App.ts :
+			export class App {
+			  private logger = inject(AnalyticsLogger);
+			 
+			  load(){
+				this.logger.trackEvent('Category','Value');
+			  }
+			}
+		Html :
+			<button (click)="load()">Click<button>
+			// here we inject the service and apply in the app.ts when we click button then service method run and print on console.
+		
+					
+	○ Creating and using services :
+		- Services are reusable pieces of code that can be shared across your Angular application. They typically handle data fetching, business logic, or other functionality that multiple components need to access.
+		- in short service is the ready mate thing which is used by multiple componanent.
+		
+		Creating a service : (making service command)
+			ng generate service CUSTOM_NAME
+			// this file is created in the open SRC folder if make custom so used the @Injectable.
+		
+			Ex.
+				service :
+					import { Injectable } from '@angular/core';
+					@Injectable({
+					  providedIn: 'root', // make singleton intance
+					})
+					export class Testservice {
+					  private data:string[] = [];
 
+					  adddata(item:string): void{ // add item
+						this.data.push(item);
+						console.log("Item Added : ",item);
+					  }
+
+					  getdata(){ // return all item
+						return [...this.data];
+					  }
+
+					}
+				
+				app.ts :
+					export class App {
+					  datastore = inject(Testservice); // inject service
+					  @ViewChild('intem') ite? : ElementRef<HTMLInputElement>;
+					  allldata:string[] = [];
+
+					  additem(){
+						  this.datastore.adddata(this.ite?.nativeElement.value || '') // call service adddata method
+						  this.allldata = this.datastore.getdata() // second method
+					  }
+					}
+				app.html :
+					<h2>App Component</h2>
+					<label>Ente Item :</label>
+					<input type="text" placeholder="item Name" #intem>
+
+					<button (click)="additem()">Add Item</button>
+
+					<ul>
+					  <li *ngFor="let data of allldata">
+						  {{data}}
+					  </li>
+					</ul>
+					<router-outlet></router-outlet>
+				
+	○ Defining dependency providers :
+		- Angular provides two ways to make services available for injection:
+		- Automatic provision - Using providedIn in the @Injectable decorator or by providing a factory in the InjectionToken configuration Manual provision - Using the providers array in components, directives, routes, or application config.
+		
+		- when we used the Injectable with providedIn root the injection time we just put in the inject() method to inject service.
+		- but when used the Only @Injectable() that time we declare the service in the providers in componanent.
+			
+		
+	○ What is an InjectionToken? :
+		- in simple way we use the Inject for inject service in the component, but when we inject the value, object, function, constant that time InjectionToken is used.
+		- in the componanent we inmport in the providers and give that token value by useValue.
+		Ex.
+			token file :
+				import { InjectionToken } from "@angular/core";
+				export const Api_key = new InjectionToken<number>('Api_Key');
+				// return the string Api_key which is number type
+				
+			app.ts :
+				@Component({
+				  selector: 'app-root',
+				  standalone: true,
+				  imports: [RouterOutlet],
+				  templateUrl: './app.html',
+				  styleUrls: ['./app.css'],
+				  providers:[{
+					provide:Api_key,useValue : 15241 // tokem value assigned
+				  }]
+				})
+				
+				export class App {
+				  constructor(@Inject(Api_key) private api_key: number){} // inject in constructor
+				  clll(){
+					console.log("Api Call By : ",this.api_key);
+				  }
+				} // when we click button then token valus is print which is passed from providers useValue.
+				
+	○ InjectionToken with providedIn: 'root' :
+		- in this topic we just placed the service in the inject(service_name).
+		- providedIn : 'root' meaning is make a intance a singleton for whole application.
+		- simple making services and inject in the componanent and used it's method or anything.
+		
+		Ex.
+			testservice.ts :
+				export class testservice{
+					show(){
+						console.log("Service Injected !")
+					}
+				}
+			
+			App.ts :
+				export class App {
+					services = inject(testservice);
+					apply(){
+						services.show();
+					}
+				}
+			
+	○ Creating component-specific instances :
+		- if create the DI class or token in the same componanent then it's must be declare the in the providers beacause when service is created in the same componanent then it's override as result service is destroy at the componanent level.
+			Ex.
+				app.ts :
+					@Injectable({ providedIn: 'root' }) // sevice class
+						export class DataStore {
+						  private data: ListItem[] = [];
+						}
+						
+					@Component({
+					  selector: 'app-isolated',
+					  // Creates new instance of `DataStore` rather than using the root-provided instance.
+					  providers: [DataStore], // providers declare must be for same componanent
+					  template: `...`
+					})
+
+					export class app {
+					  dataStore = inject(DataStore); // Component-specific instance
+					}
+	
+	○ Injector hierarchy in Angular :
+		- in the step by step flow of the value which is flow on top to bottom, example here make one tree first make root service named socialapp, has two service named userprofile, friendlist and here friendlist has a frinedentry service here userprofile has no any sevice.
+		- SocialApp can provide values for UserProfile and FriendList
+		- FriendList can provide values for injection to FriendEntry, but cannot provide values for injection in UserProfile because it's not part of the tree
+		
+	○ Declaring a provider :
+		- angular DI system is work as a key value pair.
+		
+		○ Provider configuration object :
+			- Every provider configuration object has two primary parts:
+			
+			Provider identifier: The unique key that Angular uses to get the dependency (set via the provide property)
+				◘ Value: The actual dependency that you want Angular to fetch, configured with different keys based on the desired type:
+				◘ useClass - Provides a JavaScript class
+				◘ useValue - Provides a static value
+				◘ useFactory - Provides a factory function that returns the value
+				◘ useExisting - Provides an alias to an existing provider
+			
+			Ex.
+				Service File :
+					import { InjectionToken } from "@angular/core";
+					
+					// Useclass
+					export class Services{
+					  log(){
+						console.log("Log are injected !");
+					  }
+					}
+
+					// Usevalue
+					export const USEVALUES= new InjectionToken<string>('USEVALUES');
+
+					// UseFactory
+					export const Ram_Num = new InjectionToken<number>('RandomNumber');
+
+					// UseAlis
+					export class Aliastype{
+					  send(){
+						console.log("I am Alias !");
+					  }
+					}
+					export const AlisVar = new InjectionToken<Aliastype>('aliastypes');
+			
+			App.ts :
+				import { Component, ElementRef, Inject, inject, ViewChild } from '@angular/core';
+				import { RouterOutlet } from '@angular/router';
+				import {  Aliastype, AlisVar, Ram_Num, Services, USEVALUES } from './Service/testservice';
+
+				@Component({
+				  selector: 'app-root',
+				  standalone: true,
+				  imports: [RouterOutlet],
+				  templateUrl: './app.html',
+				  styleUrls: ['./app.css'],
+				  providers:[{
+					provide : Services,
+					useClass : Services
+				  },
+				  {
+					provide : USEVALUES,useValue : 'USE Value Is USed !'
+				  },
+				  {
+					provide : Ram_Num,useFactory:()=>Math.floor(Math.random()*100)
+				  },
+				  {
+					provide : Aliastype, useClass: Aliastype
+				  },
+				  {
+					provide : AlisVar,useExisting:Aliastype
+				  }
+				]
+				})
+
+				export class App {
+				  constructor(private logr : Services){}
+				  Usefacultoryse= inject(Ram_Num);
+				  UseExistingval = inject(AlisVar);
+
+				  Useclass(){
+					this.logr.log();
+				  }
+
+				  Usevalue(){
+					console.log(USEVALUES.toString());
+				  }
+
+				  UseFactory(){
+					console.log(this.Usefacultoryse);
+				  }
+
+				  UseExiting(){
+					this.UseExistingval.send();
+				  }
+				}
+			
+			App.html :
+				<h2>App Component</h2>
+				<button (click)="Useclass()">Use Class</button>
+				<button (click)="Usevalue()">Use Value</button>
+				<button (click)="UseFactory()">Use Factory</button>
+				<button (click)="UseExiting()">Use Existing</button>
+				<router-outlet></router-outlet>
+
+		Provider identifiers.......
 
 
 
