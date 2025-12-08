@@ -3168,13 +3168,230 @@ Signal : used like a store or set or update value
 				<button (click)="UseExiting()">Use Existing</button>
 				<router-outlet></router-outlet>
 
-		Provider identifiers.......
+-------------
+08/12/2025
+----------
+	○ Provider identifiers :
+		- 
 
+	○ Injection context :
+		- The dependency injection (DI) system relies internally on a runtime context where the current injector is available.
+		- This means that injectors can only work when code is executed in such a context.
+		- In short DI is Available When The Angular Manually Inject the Service in the Constructor or class.
+			Ex.
+				○ Constructor
+				@Injectable()
+					export class MyService {
+					  constructor(private http: HttpClient) {
+						// inject(HttpClient) yaha available chhe
+					  }
+					}
+				
+				○ Field initializer
+				@Injectable()
+				export class MyService {
+				  private logger = inject(Logger); // works here
+				}
+				
+			// here DI is work only runtime mode which angular inject the manually but plain js not allow to work inject in the plain js.
+				Ex.
+					setTimeout(() => {
+					  const logger = inject(Logger); // ❌ ERROR, no injection context
+					}, 1000); // here plain js not allow inject
+				
+	○ Hierarchical injectors :
+		- From the top to bottom apply line by line inherit methods and variable.
+		- parent inheri child and child inherit main app class so in the app class can access parent or child methods under single class.
+			Ex.
+				class 1
+				class 2 extends 1
+				class main extends 2 // here access 2 or also 1 methods or variable.
+				
+		○ Types of injector hierarchies
 
+			Angular has two injector hierarchies:
 
+				Injector hierarchies	 		Details
+				--------------------------------------------------
+				EnvironmentInjector hierarchy	Configure an 				EnvironmentInjector in this hierarchy using @Injectable() or providers array in ApplicationConfig.
+				
+				ElementInjector hierarchy		Created implicitly at each DOM element. An ElementInjector is empty by default unless you configure it in the providers property on @Directive() or @Component().
+				
+		○ EnvironmentInjector :
+			- Gujrati : EnvironmentInjector application-wide root injector chhe, jya services globally available hoy chhe.
+			- in short EnvironmentInjector is a provide service as a globally, and that done by two way.
+			
+				1.@Injectable() providedIn :
+					@Injectable({
+							  providedIn: 'root'  // root EnvironmentInjector ma available
+							})
+							export class ItemService {
+							  name = 'telephone';
+							}
+							
+				2.ApplicationConfig.providers array (bootstrapApplication() ma) 
+					bootstrapApplication(AppComponent, {
+					  providers: [
+						{ provide: ItemService, useClass: ItemService }
+					  ]
+					});
+				
+				Tip:
+					providedIn: 'root' = tree-shaking support
+					→ Unused services automatically remove thayi → smaller bundle size.
+					→ ApplicationConfig.providers = manually override, app-wide providers.
+					
+		○ ElementInjector :
+			- when we use the @componanent / viewproviders so here we create the ElementInjector for this @componanent.
+			- Component ni andar je providers define karo → e service aa particular component ma j available.
+			-Child components ma availability visibility rules par depend kare.
+			- Component destroy thaye tyare service instance pan destroy.
+			Ex.
+				@Injectable()
+					export class ItemService {
+					  name = 'default';
+					}
+				
+				Component-level provider:
+				@Component({
+				  selector: 'app-test',
+				  template: `{{ item.name }}`,
+				  providers: [
+					{ provide: ItemService, useValue: { name: 'lamp' } }
+				  ]
+				})
+				export class TestComponent {
+				  constructor(public item: ItemService) {}
+				}
+				
+				
+		○ Resolution modifiers :
+			- in the DI if the service Or injected class are not present or not available on the local application so here help the Resolution modifiers.
+			- or any service related which is injected in the main class so helpfull it.
+			
+			○ 4 Resolution Modifiers in Angular
+				1.@Optional()
+				2.@Self()
+				3.@SkipSelf()
+				4.@Host()
+				
+			1) @Optional() :
+				- if injected service not present so not show error but it's handle and jusr send back null.
+	
+					
+			2) @Self() :
+				- check the self component not check the parent componanent.
+			
+			3) @SkipSelf() :
+				- Check not self but check parent componanent if there has no value then return null or use the @Optional because many cases parent componanent has no value then @optional are return null otherwise app will crash.
+			
+			4) @Host() :
+				- Check the last connected or injected or called component and return last host value.
+				
+			Ex.
+				service :
+					import { InjectionToken } from "@angular/core";
+					export const MSG_TOKEN = new InjectionToken<string>('MessageToken');
 
-													
+				Parent :
+					@Component({
+					  selector: 'app-parent',
+					  template: `
+						<h2>Parent Component</h2>
+						<app-child></app-child>
+					  `,
+					  providers: [
+						{ provide: MSG_TOKEN, useValue: "Parent Message" }
+					  ],
+					  imports: [ChildComponent]
+					}) // give the token value 
+					
+				Child :
+					@Component({
+				  selector: 'app-child',
+				  template: `
+					<h3>Child Component</h3>
+					<button (click)="show()">Show Outputs</button>
+				  `,
+				  providers: [
+					{ provide: MSG_TOKEN, useValue: "Child Message" }
+				  ]
+				})
+				export class ChildComponent {
 
+				  constructor(
+					@Self()       @Inject(MSG_TOKEN) public selfMsg: string, // check self componanent
+					@SkipSelf()  @Inject(MSG_TOKEN) public parentMsg: string, // check parent componanent
+					@Host()      @Inject(MSG_TOKEN) public hostMsg: string, // check
+					@Optional()  @Inject("UNKNOWN_TOKEN") public optionalMsg: any // check injected componanent available or not if not return null
+				  ) {}
 
-						
+				  show() {
+					console.log("SELF:", this.selfMsg);
+					console.log("SKIPSELF:", this.parentMsg);
+					console.log("HOST:", this.hostMsg);
+					console.log("OPTIONAL:", this.optionalMsg);
+				  }
+				}
+				
+				app.html :
+					<h2>App Component</h2>
+					<app-parent></app-parent>
+					<router-outlet></router-outlet>
+					
+	○ Logical structure of the template :
+		- Angular injector is not a dom base but it's a structure based.
+		- use the <#View> for the Logical Structure.
+		- <#View> is the used for the wrap the componanent.child componanent has injected in this <#View>.
+		- by virtual structural DI can deside which provider is search.
+		- better understanding by example:
+		Ex.
+			in the componanent :
+				<app-parent>
+					<app-child></app-child>
+				</app-parent>
+			
+			In the actual angular can consider :
+				<app-parent>
+					<#View>
+					<app-child>
+						<#View>
+						.. content
+						<#View>
+					</app-child>
+					<#View>
+				</app-parent>
+				
+				- <#View> is the inject or cover or wrap the child componanent.
+		
+		○ Providing services in @Component() :
+			- in the making service with Injectable() so when inject in componanent then declare once time in providers.
+			Ex.
+				service :
+					import { Injectable } from '@angular/core';
+					@Injectable()
+					export class ItemService {
+					  name = 'Lamp';
+					}
+					
+				component :
 
+					@Component({
+					  selector: 'app-my',
+					  template: `
+						<p>Item name: {{ item.name }}</p>
+						<button (click)="change()">Change Name</button>
+					  `,
+					  providers: [
+						ItemService   // 👉 Service provided at component level
+					  ]
+					})
+					export class MyComponent {
+					  constructor(public item: ItemService) {} // making a instance which help to access the service method or variable.
+					  change() {
+						this.item.name = 'Table'; // this method is change the name lamp to Table.
+					  }
+					}
+				// in this code when the service is call in onther componanent that time this componanent instance us dstroy.
+
+		
