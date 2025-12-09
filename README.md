@@ -3392,6 +3392,268 @@ Signal : used like a store or set or update value
 						this.item.name = 'Table'; // this method is change the name lamp to Table.
 					  }
 					}
-				// in this code when the service is call in onther componanent that time this componanent instance us dstroy.
+				// in this code when the service is call in onther componanent that time this componanent instance us distroy.
 
+-------------
+09/12/2025
+----------
+	○ Defernce Between   providers & viewProviders :
+		- When the service is inject in the component then two thing are consider :
+			Declare with providers or declare with a viewProviders
 		
+		- Meaning of this two @Component Property :
+			- 1. providers :
+				- Inject main service in the parent level componanent and it's affect in the all parent's child componanent.
+				- suppose make one service and inject in the parent componanent so here it's service's method or variable access by all child of this parent.
+				- Ex.
+					service.ts
+					parent -> injected with provider
+					parent has (child,co-child)
+					-// here service method is access by child,co-child also.
+					
+					service :
+						import { Injectable } from "@angular/core";
+						@Injectable()
+						export class FlowerService {
+						  emoji = '🌺';
+						}
+						
+					parent.ts :
+						import { Component, inject } from '@angular/core';
+						import { FlowerService } from './flower.service';
+
+						@Component({
+						  selector: 'app-parent',
+						  template: `
+							<p>Parent Flower: {{ flower.emoji }}</p>
+							<app-child></app-child>
+						  `,
+						  providers: [FlowerService]  // 👈 Service provided here
+						})
+						export class ParentComponent {
+						  flower = inject(FlowerService);
+						}
+					
+					child.ts :
+						import { Component, inject } from '@angular/core';
+						import { FlowerService } from './flower.service';
+
+						@Component({
+						  selector: 'app-child',
+						  template: `
+							<p>Child Flower: {{ flower.emoji }}</p>
+						  `
+						})
+						export class ChildComponent {
+						  flower = inject(FlowerService);
+						}
+					
+					Output :
+						Parent Flower: 🌺
+						Child Flower: 🌺
+					// this happen because service is injected with provider
+					
+					
+			2. viewproviders :
+				- service is affected in current parent componanent or it's view, but not affect in out side of the parent.
+				 Ex.
+					service.ts
+					parent -> injected with viewProviders
+					parent has (child,co-child)
+					-// here service method is not access by child,co-child also.(beacause viewProviders).
+				
+					parent.ts :
+						@Component({
+						  selector: 'app-parent',
+						  template: `
+							<p>Parent Flower: {{ flower.emoji }}</p>
+							<app-child></app-child>
+						  `,
+						  viewProviders: [FlowerService]   // 👈 Only parent view can access
+						})
+						export class ParentComponent {
+						  flower = inject(FlowerService);
+						}
+
+					child.ts :
+						@Component({
+						  selector: 'app-child',
+						  template: `
+							<p>Child Flower: {{ flower.emoji }}</p>
+						  `
+						})
+						export class ChildComponent {
+						  flower = inject(FlowerService);
+						}
+					
+					Output :
+						Parent Flower: 🌺
+						ERROR: No provider for FlowerService in ChildComponent
+						
+					// in short :
+					providers : Component + all child components
+					viewProviders : Component + its own view children only
+					
+		○ Using the providers array :
+			- in the @Component property provider has a many key and value pair to help to inject service to componanent.
+			- here also available useValue,useExisting,useClass etc... it availability when we want.
+				Ex.
+					app.ts :
+						@Component({
+						  selector: 'app-child',
+						  templateUrl: './child.component.html',
+						  styleUrls: ['./child.component.css'],
+						  // use the providers array to provide a service
+						  providers: [{provide: FlowerService, useValue: {emoji: '🌻'}}], // here we can chenage the value manually.
+						})
+						export class ChildComponent {
+						  // inject the service
+						  flower = inject(FlowerService);
+						  ngOnInit(){
+							console.log(this.item.testvalue);
+						  }
+						}
+				
+				
+		○ Using the viewProviders array :
+			- it's a similar to provider but rule is follow as a viewProviders.
+			
+		
+		○ Visibility of provided tokens :
+			- in this topic angular can search from start to end injected service.
+			- it's follow a rule of selfskip,host,optional,self.
+			
+			Ex.
+					flower = inject(FlowerService, { skipSelf: true })
+					flower = inject(FlowerService, { skipSelf: true, host: true }); // multiple
+
+					// it's find the own parent not a current componanent.
+					
+	
+	○ Optimizing client application size with lightweight injection tokens :
+		- if we make a class or service and inject in the componanent so componanent makes a bundle for inject the service.
+		- but instead of use the injectiontoken, beacause it's a lightweight to inject in the component.
+		Ex.
+			By class sevice :
+				@Injectable()
+				export class EmojiService {
+				  emoji = '🌺';
+				}
+
+			By InjectionToken Service :
+				export const FLOWER = new InjectionToken<string>('FLOWER', {
+				  providedIn: 'root',
+				  factory: () => '🌺'
+				});
+				
+				Inject Time :	
+				flower = inject(FLOWER);
+			// we should use the injectiontoken for lightweight communication between componanenta and service class.
+			
+			
+	
+	○ Inject the component's DOM element :
+		- in this angulat componanent we should't use the third party DOM access tool instead of we should use the ElementRef,
+		- ElementRef is the use for a DOM access for current componanent template.
+		
+		EX.
+			import {Directive, ElementRef, inject} from '@angular/core';
+				@Directive({
+				  selector: '[appHighlight]',
+				})
+				export class HighlightDirective {
+				  private element = inject(ElementRef);
+				  update() {
+					this.element.nativeElement.style.color = 'red';
+				  }
+				}// here access DOM and ElementRef can change the style color to red.
+				
+	
+	○ Inject the host element's tag name :
+		- When you need the tag name of a host element, inject it using the HOST_TAG_NAME token.
+			Ex.
+				import {Directive, HOST_TAG_NAME, inject} from '@angular/core';
+				@Directive({
+				  selector: '[roleButton]',
+				})
+				export class RoleButtonDirective {
+				  private tagName = inject(HOST_TAG_NAME);
+				  onAction() {
+					switch (this.tagName) {
+					  case 'button':
+						// Handle button action
+						break;
+					  case 'a':
+						// Handle anchor action
+						break;
+					  default:
+						// Handle other elements
+						break;
+					}
+				  }
+				}
+				
+	○ Resolve circular dependencies with a forward reference :
+		- if the we want to pass the reference the class which is actual not define at a runtime but we pass the class reference that time simple method is give a error but ForwardRef is help full.
+		- ForwardRef is reduce the cirular depedency.
+		Basic :
+			providers: [
+			  {
+				provide: PARENT_MENU_ITEM,
+				useExisting: forwardRef(() => MenuItem),
+			  },
+			],
+		Ex.
+			It's a Give A Error beacause class is not definr when it's call :
+			@Component({
+			  selector: 'app-root',
+			  standalone: true,
+			  template: 'Hello',
+			  providers: [
+				{
+				  provide: TOKEN,
+				  useExisting: MyService   // ❌ Error: MyService is not defined yet
+				}
+			  ]
+			})
+			export class AppComponent {}
+
+			export class MyService {}
+
+			
+			Ex for ForwardRef :
+				@Component({
+				  selector: 'app-root',
+				  standalone: true,
+				  template: 'Hello',
+				  providers: [
+					{
+					  provide: TOKEN,
+					  useExisting: forwardRef(() => MyService)  // ✅ fixed
+					}
+				  ]
+				})
+				export class AppComponent {
+				  constructor(@Inject(TOKEN) public service: MyService) {}
+				}
+
+				export class MyService {
+				  log() {
+					console.log("Service working!");
+				  }
+				}
+				
+			componanent :
+				
+				 providers : [
+					{
+					  provide : tokenRef,
+					  useExisting : forwardRef(()=> MyService)
+					}
+				  ] // here we declare that, now MyService is not availability but we will create.
+				 
+				
+				
+
+					
+	routing.............
