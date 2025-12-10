@@ -3553,7 +3553,7 @@ Signal : used like a store or set or update value
 			
 	
 	○ Inject the component's DOM element :
-		- in this angulat componanent we should't use the third party DOM access tool instead of we should use the ElementRef,
+		- in this angular componanent we should't use the third party DOM access tool instead of we should use the ElementRef,
 		- ElementRef is the use for a DOM access for current componanent template.
 		
 		EX.
@@ -3654,6 +3654,278 @@ Signal : used like a store or set or update value
 				 
 				
 				
+------------
+10/12/2025
+----------
+○ Angular Routing :
+	- in the angular app or any SPA(single page application) rendering is the main or important topic of the performance side.
+	- Because when we click any link that time browser fully load and redirct to onther page but here SPA is apply so routing is the non load or wihtout load and serve more follow.
+	- in short Angular Routing is provide the non load reidrection, when user click link that time angular routing serve the componanent.
+	- main thing angular serve the componanent on <route-outlet></route-outlet> is a reserve space to render componanent when the rendering is happen.
+	- so wihtout space or <route-outlet> routing is not capable to serve the componanent.
+	- in the template use the routelink.
+	- more content about the routing is below side.
+	
+	In addition, the Angular Routing library offers additional functionality such as:
 
+		○ Nested routes
+		○ Programmatic navigation
+		○ Route params, queries and wildcards
+		○ Activated route information with ActivatedRoute
+		○ View transition effects
+		○ Navigation guards
+	
+	
+○ Define routes :
+	- Routes serve as the fundamental building blocks for navigation within an Angular app.
+
+	○ What are routes? :
+		- In Angular, a route is an object that defines which component should render for a specific URL path or pattern, as well as additional configuration options about what happens when a user navigates to that URL.
+		- Here is a basic example of a route:
+		Ex.
+			import { AdminPage } from './app-admin/app-admin.component';
+			const adminPage = {
+			  path: 'admin', // path meaning is url is '/admin'
+			  component: AdminPage // url admin render AdminPage render
+			}
+			
+	○ Managing routes in your application :
+		- in angular application if we want to use the rendering then we should define the path or routing in the app.route.ts file example is below :
+			Ex.
+				import { Routes } from '@angular/router';
+						import { HomePage } from './home-page/home-page.component';
+				import { AdminPage } from './about-page/admin-page.component';
+				export const routes: Routes = [
+				  {
+					path: '',
+					component: HomePage,
+				  }, // empty path render HomePage component
+				  {
+					path: 'admin',
+					component: AdminPage,
+				  }, // /admin path render AdminPage componanent
+				];
+		
+	○ Adding the router to your application :
+		- if we make the routing so we can set route file as a global in the entire angular application.
+		- suppose we make the one routing so we should attach as a global file by this topic.
+			Ex.
+				import { ApplicationConfig } from '@angular/core';
+				import { provideRouter } from '@angular/router';
+				import { routes } from './app.routes';
+				export const appConfig: ApplicationConfig = { // ApplicationConfig is the config file of the angular
+				  providers: [
+					provideRouter(routes), // here we make the route as a global level.
+					// ...
+				  ]
+				};
+		
+	○ Route URL Paths :
+		○ Static URL Paths :
+			- in this topic static paths means that, in the route file one path property available and it's consume path url name and exactly that name we enter the url so route is render those path componanent.
+			Ex.
+				○ "/admin"
+				○ "/blog"
+				○ "/settings/account"
+				// here we enter same path value like admin blog if we enter other value then it's given error, here dynamical value not allow so it's called a static URl.
+				
+		
+		○ Define URL Paths with Route Parameters :
+			 - here we can define the route with dynamical parameters. 
+			 - like a admin?id=10,admin?id=03 etc... here id is dynamical
+			 Ex.
+				import { Routes } from '@angular/router';
+				import { UserProfile } from './user-profile/user-profile';
+				const routes: Routes = [
+				  { path: 'user/:id', component: UserProfile } 
+				]; // here 
+			
+			○ Valid route parameter names must start with a letter (a-z, A-Z) and can only contain:
+
+				◘ Letters (a-z, A-Z)
+				◘ Numbers (0-9)
+				◘ Underscore (_)
+				◘ Hyphen (-)
+			
+			○ We can also write the multiple Parameter:
+				Ex.
+					const routes: Routes = [
+					  { path: 'user/:id/:social-media', component: SocialMediaFeed },
+					  { path: 'user/:id/', component: UserProfile },
+					];
+				//	user - base path
+					:id - dynamical id 
+					:social-media : also dynamic parameter
 					
-	routing.............
+				
+		○ Wildcards :
+			- When you need to catch all routes for a specific path, the solution is a wildcard route which is defined with the double asterisk (**).
+			- here if the path is not found then render componanent which is in the '**', Example if the componanent not render so '**' is render with PageNotFound.
+			Ex.
+				import { Home } from './home/home.component';
+				import { UserProfile } from './user-profile/user-profile.component';
+				import { NotFound } from './not-found/not-found.component';
+				const routes: Routes = [
+				  { path: 'home', component: Home },
+				  { path: 'user/:id', component: UserProfile },
+				  { path: '**', component: NotFound }
+				]; // here user/:id is not availability so NotFound Render By helping '**'.
+				
+		○ How Angular matches URLs
+			- When you define routes, the order is important because Angular uses a first-match wins strategy. This means that once Angular matches a URL with a route path, it stops checking any further routes. As a result, always put more specific routes before less specific routes.	
+			-  in the route file many path available but 2 path are same name so angular find first to last find, and at end of the angular render which componanent when it's catch first.
+			- one time angular catch the path and componanent so that is not find next path.
+			Ex.
+				const routes: Routes = [
+				  { path: '', component: HomeComponent },              // Empty path
+				  { path: 'users/new', component: NewUserComponent },  // Static, most specific
+				  { path: 'users/:id', component: UserDetailComponent }, // Dynamic
+				  { path: 'users', component: UsersComponent },        // Static, less specific
+				  { path: '**', component: NotFoundComponent }         // Wildcard - always last
+				];
+				
+				If a user visits /users/new, Angular router would go through the following steps:
+
+					1.Checks '' - doesn't match
+					2.Checks users/new - matches! Stops here
+					3.Never reaches users/:id even though it could match
+					4.Never reaches users
+					5.Never reaches **
+					
+	○ Loading Route Component Strategies :
+		- Understanding how and when components load in Angular routing is crucial for building responsive web applications. 
+		- Angular offers two primary strategies to control component loading behavior:
+
+			1.Eagerly loaded: Components that are loaded immediately
+			2.Lazily loaded: Components loaded only when needed
+			
+		○ Eagerly loaded components :
+			- in this point componanent render imedietlly that called a Eagerly loaded.
+					Ex.
+						import { Routes } from "@angular/router";
+						import { HomePage } from "./components/home/home-page"
+						import { LoginPage } from "./components/auth/login-page"
+						export const routes: Routes = [
+						  // HomePage and LoginPage are both directly referenced in this config,
+						  // so their code is eagerly included in the same JavaScript bundle as this file.
+						  {
+							path: "",
+							component: HomePage
+						  },
+						  {
+							path: "login",
+							component: LoginPage
+						  }
+						] // here when the angular application is run first time then all componanent are import in the browser which route file has here HomePage or LoginPage are import at a time when angular application are run.
+						
+		○ Lazily loaded components :
+			- in this topic all things are diferent from Eagerly loading, when we need that time import or load the componanent in the browser.
+			Ex.
+				import { Routes } from "@angular/router";
+				export const routes: Routes = [
+				  // The HomePage and LoginPage components are loaded lazily at the point at which
+				  // their corresponding routes become active.
+				  {
+					path: 'login',
+					loadComponent: () => import('./components/auth/login-page').then(m => m.LoginPage)
+				  },
+				  {
+					path: '',
+					loadComponent: () => import('./components/home/home-page').then(m => m.HomePage)
+				  }
+				] // here when hit the login url that time LoginPage are loaded otherwise it's not loaded.
+				
+		○ Injection context lazy loading :
+			- in the route file we can inject the service by inject().
+			Ex.
+				import { Routes } from '@angular/router';
+				import { inject } from '@angular/core';
+				import { FeatureFlags } from './feature-flags';
+				export const routes: Routes = [
+				  {
+					path: 'dashboard',
+					// Runs inside the route's injection context
+					loadComponent: () => {
+					  const flags = inject(FeatureFlags);
+					  return flags.isPremium
+						? import('./dashboard/premium-dashboard').then(m => m.PremiumDashboard)
+						: import('./dashboard/basic-dashboard').then(m => m.BasicDashboard);
+					},
+				  },
+				]; // here when we hit the dashboard url that time FeatureFlags is injected and load in the browser.
+				
+		○ Should I use an eager or a lazy route?
+
+			- There are many factors to consider when deciding on whether a route should be eager or lazy.
+
+			- In general, eager loading is recommended for primary landing page(s) while other pages would be lazy-loaded.
+
+
+			NOTE: While lazy routes have the upfront performance benefit of reducing the amount of initial data requested by the user, it adds future data requests that could be undesirable. This is particularly true when dealing with nested lazy loading at multiple levels, which can significantly impact performance.
+			
+		○ Redirects :
+			- in this topic when we go to specific url then redirect to other url.
+			- suppore we go the /test then we redire To /child.
+			Ex.
+				export const routes: Routes = [
+				  { path: '', component: App }, // default opening
+				  { path: 'child', component: ChildComponent }, // child componanent render
+				  {path: 'test',redirectTo:'/child'} // try to go test but redirect to /child
+				];
+
+		○ Page titles :
+			- it's help to give a tittle of the page which is render on browser.
+			Ex.
+				export const routes: Routes = [
+				  { path: '', component: App },
+				  { path: 'child', component: ChildComponent,title:'Sujal Gopani' },
+				]; // when someone can redirect to child then that page have Sujal Gopani tittle.
+				
+		○ Using TitleStrategy for page titles :
+			- sometime we want to page tittle is look like a custom or same as like a all tittle is seprated by '-' so this topic is apply on all tittle by 'TitleStrategy'.
+			-Ex.
+				Custom TitleStrategy :
+					import { inject, Injectable } from "@angular/core";
+					import { Title } from "@angular/platform-browser";
+					import { RouterStateSnapshot, TitleStrategy } from "@angular/router";
+
+					@Injectable()
+					export class AppTitleStrategy extends TitleStrategy {
+					  private readonly title = inject(Title);
+					  updateTitle(snapshot: RouterStateSnapshot): void {
+						const pageTitle = this.buildTitle(snapshot) || this.title.getTitle();
+						this.title.setTitle(`MyAwesomeApp - ${pageTitle}`);
+					  }
+					}
+					
+				AppConfig :
+					export const appConfig: ApplicationConfig = {
+					  providers: [
+					   
+						provideRouter(routes),
+						{provide : TitleStrategy,useClass:AppTitleStrategy}
+					  ]
+					};
+
+
+				🔍 Explanation (Gujarati)
+
+				buildTitle(snapshot)
+				→ Route मा जे title: नु value सेट छे ए fetch करे
+				Example:
+				{ path: 'home', title: 'Home Page' }
+
+				अगर title न होय?
+				→ Fallback: index.html नु default title
+
+				Finally:
+				"MyAwesomeApp - {title}"
+
+				हर page title auto-format थाय.
+				
+				
+
+
+
+
+Associating data with routes,.......
