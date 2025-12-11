@@ -3924,8 +3924,169 @@ Signal : used like a store or set or update value
 				हर page title auto-format थाय.
 				
 				
+------------
+11/12/2025
+----------
+	○ Associating data with routes :
+		- i the route file many type of data which is static so we can write those data in the Data properties.
+		- which is not changable on the runtime, like pagename, Id, role etc..
+		Ex.
+			const routes: Routes = [
+			  {
+				path: 'about',
+				component: AboutComponent,
+				data: { analyticsId: '456' } // here analyticsId is not change in the runtime
+			  }]
+			// here read the static state consider next chapter there we can read the data.
+			
+	○ Dynamic data with data resolvers :
+		- in this topic sub children url is consider here,
+			Ex.
+				 {
+					path: 'child',
+					component: ChildComponent,
+					title:'Child',
+					data: {staticId : 101} ,
+					children:[
+					  {path: 'SujalAngular',component : Parent,title:'Sub Parent'},
+					  {path: 'Sutex',component : ChildComponent,title:'Sub Child'}
+					]
+				  }
+				// here root or main url is /child this is provider ChildComponent render when user hit the /child.
+				- but in the child url sub child availability which called is SujalAngular or Sutex.
+				- so 1 subchild is /child/SujalAngular this url is provide the Parent componanent but in the ChildComponent has <router-outlet></router-outlet>
+				- so 2 subchild is /child/Sutex this is provide ChildComponent but in the Root Component has <router-outlet></router-outlet>.
+				
+				Digram :
+					Child (Root) -> provide ChildComponent
+					<router-outlet></router-outlet> (Must Be Declare If The Apply Sub Child)
+						|
+					/SujalAngular -> provide Parent Component
+					/Sutex 		  -> provide Child Component inside the ChildComponent
+					
+○ Show routes with outlets :
+	
+	○ Secondary routes with named outlets :
+		- Pages may have multiple outlets— you can assign a name to each outlet to specify which content belongs to which outlet.
+		- in this topic when click user routlink and angular provide or render component in the reserved component place.
+		- suppose user click the routelink like a 'Go TO Parent' so we can declare the <route-outlet> with name attribure and name is the reserved for the Parent componanent.
+		Ex.
+			Parent componanent
+			
+			-app.td
+				routelink => Go To Parent
+				
+				<route-outlet name="Parent-com">
+				// when click Routelink then it's componanent render in the Parent-com placed other place not render.
+			
+			Ex.
+			routes file :
+			
+				import { Routes } from '@angular/router';
+				import { App } from './app';
+				import { ChildComponent } from './child/child';
+				import { Parent } from './parent/parent';
 
 
+				export const routes: Routes = [
+				  { 
+					path: '',
+					component: App
+				  },
+
+				  {
+					path: 'child',
+					component: ChildComponent,
+					outlet:'child-com'
+				  },
+
+				  { 
+					path: 'parent', 
+					component: Parent,
+					outlet:'parent-com'
+				  },
+				  {
+					path:'test',
+					redirectTo: '/(parent-com:child)'
+				  }
+				];
+
+				
+				app.html:
+					Load Parent in named outlet
+					<a [routerLink]="[{ outlets: { 'parent-com': ['parent'] } }]">
+					  Go to Parent
+					</a>
+					<hr> 
+					Load Child in named outlet 
+					<a [routerLink]="[{ outlets: { 'child-com': ['child'] } }]">
+					  Go to Child
+					</a>
+
+					<router-outlet name="parent-com"></router-outlet>// reserved place for the Parent com
+					<hr>
+					<router-outlet name="child-com"></router-outlet>// reserved place for the Child com
+					// click Go to Child then render child in own reserved place as same as parent componanent
+	
+	○ Outlet lifecycle events
+			There are four lifecycle events that a router outlet can emit:
+
+			Event		Description
+			activate	When a new component is instantiated
+			deactivate	When a component is destroyed
+			attach		When the RouteReuseStrategy instructs the outlet to attach the subtree
+			detach		When the RouteReuseStrategy instructs the outlet to detach the subtree
+			
+			You can add event listeners with the standard event binding syntax:
+
+			<router-outlet
+			  (activate)='onActivate($event)'
+			  (deactivate)='onDeactivate($event)'
+			  (attach)='onAttach($event)'
+			  (detach)='onDetach($event)'
+			/>
+			
+	○ Passing contextual data to routed components :
+		- in this topic when the specific component render in the reserved place that time router-outlet is give the some statuc or dynamic value which is accescible by the rendered component.
+		Ex.
+			routes File :
+				export const routes: Routes = [
+				  { 
+					path: '',
+					component: App
+				  },
+				  {
+					path: 'child',
+					component: ChildComponent
+				  }
+				];
+				
+			app.html :
+				
+				<a routerLink="/child">Go to Child</a>
+
+				<router-outlet [routerOutletData]="{ theme: 'dark', version: 2 }"></router-outlet>
+				// this is the give to the some value to rendered componanent.
+				
+			childc componanent :
+				@Component({
+				  selector: 'app-child',
+				  template: `
+					<h3>Child Component</h3>
+					<p>Theme: {{ outletData().theme }}</p>
+					<p>Version: {{ outletData().version }}</p>
+				  `,
+				  imports: []
+				})
+				
+				export class ChildComponent {
+					  outletData = inject(ROUTER_OUTLET_DATA) as any;
+					  //  this is the hepl to access the value from the routerOutletData
+					  // we can perform same as same operaton in the oher componanent by helipng ROUTER_OUTLET_DATA token.
+				}
+				
+				
+				
+				Navigate to routes/..........
 
 
-Associating data with routes,.......
