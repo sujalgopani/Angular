@@ -3928,8 +3928,9 @@ Signal : used like a store or set or update value
 11/12/2025
 ----------
 	○ Associating data with routes :
-		- i the route file many type of data which is static so we can write those data in the Data properties.
+		- in the route file many type of data which is static so we can write those data in the Data properties.
 		- which is not changable on the runtime, like pagename, Id, role etc..
+		
 		Ex.
 			const routes: Routes = [
 			  {
@@ -4047,7 +4048,7 @@ Signal : used like a store or set or update value
 			/>
 			
 	○ Passing contextual data to routed components :
-		- in this topic when the specific component render in the reserved place that time router-outlet is give the some statuc or dynamic value which is accescible by the rendered component.
+		- in this topic when the specific component render in the reserved place that time router-outlet is give the some static or dynamic value which is accescible by the rendered component.
 		Ex.
 			routes File :
 				export const routes: Routes = [
@@ -4085,8 +4086,273 @@ Signal : used like a store or set or update value
 					  // we can perform same as same operaton in the oher componanent by helipng ROUTER_OUTLET_DATA token.
 				}
 				
+
+-------------
+12/12/2025
+----------
+
+○ Navigate to routes :
+	- The RouterLink directive is Angular's declarative approach to navigation. It allows you to use standard anchor elements (<a>) that seamlessly integrate with Angular's routing system.
+	
+	-> under this topic use te Routelink in the anchor tag :
+		Ex.
+			import {RouterLink} from '@angular/router';
+			@Component({
+			  template: `
+				<nav>
+				  <a routerLink="/user-profile">User profile</a> //use routerLink insteadof href
+				  <a routerLink="/settings">Settings</a>
+				</nav>
+			  `
+			  imports: [RouterLink], // import first in the componanent file
+			  ...
+			})
+			export class App {}
+			
+			
+	○ Using absolute or relative links :
+		- Relative URLs in Angular routing allow you to define navigation paths relative to the current route's location. This is in contrast to absolute URLs which contain the full path with the protocol (e.g., http://) and the root domain (e.g., google.com).
+		
+		Ex.
+			<!-- Absolute URL -->
+			<a href="https://www.angular.dev/essentials">Angular Essentials Guide</a>
+			<!-- Relative URL -->
+			<a href="/essentials">Angular Essentials Guide</a>
+		
+		// in this if the using the relative or abosulate path then use the href not a routerLink.
+		
+	○ How relative URLs work :
+		
+		// in this line we give only static string value like static routes as a /child,/parent,/store etc which has no need to combine the dynamic data
+		<a routerLink="dashboard">Dashboard</a>
+		
+		// here consider a static + dynamic data like a /child/101,/parent/201 etc in the end of the number is changable by dynamically.
+		<a [routerLink]="['dashboard']">Dashboard</a>
+		
+		Ex.(Dynamically Data pass Example)
+			route.ts :
+				 {
+					path :'child/:id', // define the route child with dynamic id
+					component : Parent
+				 }
+			
+			nav.ts :
+				currentUserId = 205
+			
+			nav.html :
+				<a [routerLink]="['child', currentUserId]">Current User</a>
+				// when we click here then go to 'http://localhost:4200/child/205' and parent componanent render.
+				// one thing consider /child/:id(give by componanent) if the child/:id route is not available then angular application is throw error so first declare the path after use in the <a> tag.
 				
+			
+			Simple Example :
+				ts file :
+					user=[
+						{currentUserId:101,uname:'Sujal',city:'Surat'},
+						{currentUserId:102,uname:'Shrey',city:'Rajkot'},
+						{currentUserId:103,uname:'Man',city:'Bharuch'},
+						{currentUserId:104,uname:'Meet',city:'surat'},
+						{currentUserId:105,uname:'Mitesh',city:'Jaypur'}
+					  ]
+					  
+				html file :
+					<table>
+					  <thead>
+						<tr>
+						  <th>Id</th>
+						  <th>Name</th>
+						  <th>City</th>
+						  <th>Go To Profile</th>
+						</tr>
+					  </thead>
+
+					  <tbody>
+						<tr *ngFor="let data of user">
+						  <td>{{ data.currentUserId }}</td>
+						  <td>{{ data.uname }}</td>
+						  <td>{{ data.city }}</td>
+						  <td><a [routerLink]="['child',data.currentUserId]">Go</a></td>
+						</tr>
+					  </tbody>
+					</table>
+					// here like api data display user data by it's dynamically go to /child/id(101,102,103,104,105 etc..)
+					
+			// if write the multiple dynamical data at a time so :
 				
-				Navigate to routes/..........
+				<a routerLink="/team/123/user/456">User 456</a>
+				<a [routerLink]="['/team', teamId, 'user', userId]">Current User</a>”
+	
+	○ Programmatic navigation to routes :
+		- While RouterLink handles declarative navigation in templates, Angular provides programmatic navigation for scenarios where you need to navigate based on logic, user actions, or application state. By injecting Router, you can dynamically navigate to routes, pass parameters, and control navigation behavior in your TypeScript code.
+		- if we want to routing is perform by not a routelink but it's happen by programmly by making event so given information below.
+		
+		◘ router.navigate() :
+			- use this router.navigate() we can redirect to specific route without reloading page.
+				Ex.
+					<button (click)="navigateToProfile()">View Profile</button>
+
+				ts file :
+					import { Router } from '@angular/router';
+					@Component({
+					  selector: 'app-dashboard',
+					  template: `
+						<button (click)="navigateToProfile()">View Profile</button>
+					  `
+					})
+					export class AppDashboard {
+					  private router = inject(Router);
+					  navigateToProfile() {
+						// Standard navigation
+						this.router.navigate(['/profile']);
+						// With route parameters
+						this.router.navigate(['/users', userId]);
+						// With query parameters
+						this.router.navigate(['/search'], {
+						  queryParams: { category: 'books', sort: 'price' }
+						});
+						// With matrix parameters
+						this.router.navigate(['/products', { featured: true, onSale: true }]);
+					  }
+					}
+				
+		○ relativeTo :
+			- this is the helpfull to redirct to own  child or own siblings like suppose we are placed now sujal and under the sujal one edit named route define so write the code in side the sujal's componanent to redirect to edit.
+			
+			Diagram :
+				sujal -> render Parent componanent
+				  |
+				 edit -> render other or our example parent componanent
+				 
+				 so here two url is available :
+					/sujal & /sujal/edit
+			
+			- so in the sujal meand parent componanent redirct to own child componanent edit so next redirectation code is write in the parent componanent.
+			- that code is redirect to sujal child edit url.
+			
+			Ex.
+				route file :
+					  {
+						path:'sujal',
+						component:Parent,
+						children:[
+						  {path:'edit',component:ChildComponent}
+						]
+					  }
+				
+				main file (nav.html) :
+					<a routerLink="/sujal">Go Parent</a>
+
+				parent level file :
+					@Component({
+					  selector: 'app-parent',
+					  template: `
+						<h2>Parent Component</h2>
+						<button (click)="navigateToProfile()">Go to Parent's child</button>
+						<router-outlet></router-outlet>
+					   `,
+					  imports: [RouterOutlet]
+					})
 
 
+					export class Parent { 
+					  private router = inject(Router);
+					  private route = inject(ActivatedRoute);
+
+					  navigateToProfile() {
+						this.router.navigate(['edit'],{relativeTo:this.route});
+					  }
+					}
+				// here first of all we see the main content which is 'Go to Parent' on this click we redirct to /sujal and render parent componanent.
+				// in the parent componanent we have to see the 'Go to Child' button on click to redicte the  /sujal childer edit componanent child and child is render in the parent <route-outlet>.
+				// it's all parent to child rendering by helping ActivatedRoute and relativeTo.
+			
+			
+		○ router.navigateByUrl() :
+			- under this point we can direct make the url by written the string into the navigateByUrl('string here or url here').
+			- parent child url are accept querystring, matrix accept.
+			Ex.
+				// Standard route navigation
+				router.navigateByUrl('/products');
+				// Navigate to nested route
+				router.navigateByUrl('/products/featured');
+				// Complete URL with parameters and fragment
+				router.navigateByUrl('/products/123?view=details#reviews');
+				// Navigate with query parameters
+				router.navigateByUrl('/search?category=books&sortBy=price');
+				// With matrix parameters
+				router.navigateByUrl('/sales-awesome;isOffer=true;showModal=false')
+				
+			navigate() - pass the url as a array segments or parts. 
+				ex. navigate(['/users', 10])
+			
+			navigateByUrl() - pass the url direct as a string.
+				Ex. navigateByUrl('/users/10')
+			// main thing both are consider the Router inject.
+			
+
+○ Read route state :
+	- Angular Router allows you to read and use information associated with a route to create responsive and context-aware components.
+	- read the querystring, url dynamical data etc read from componanent side.
+	
+	○ Get information about the current route with ActivatedRoute :
+		- ActivatedRoute is a service from @angular/router that provides all the information associated with the current route.
+		- it's give the all about the componanent information.
+		Ex.
+			import { Component } from '@angular/core';
+			import { ActivatedRoute } from '@angular/router';
+			@Component({
+			  selector: 'app-product',
+			})
+			export class ProductComponent {
+			  private activatedRoute = inject(ActivatedRoute); // important
+			  constructor() {
+				console.log(this.activatedRoute); // it's give the information componanent
+			  }
+			}
+			
+			The ActivatedRoute can provide different information about the route. Some common properties include:
+
+			Property	Details
+			url--------> An Observable of the route paths, represented as an array of strings for each part of the route path.
+			data-------> An Observable that contains the data object provided for the route. Also contains any resolved values from the resolve guard.
+			params-----> An Observable that contains the required and optional parameters specific to the route.
+			queryParams-> An Observable that contains the query parameters available to all routes.
+			
+		○ Understanding route snapshots :
+			- reading the query string, Route params, Fragment, Full static URL segments,  Route data.
+			- it's done by ActivatedRoute and it's properties.
+			
+			Ex.
+					route :
+						  {
+							path :'child/:id',
+							component : Parent
+						  }
+					
+					nav.html :
+						<a [routerLink]="['child',205]">Go to</a>
+					
+					parent componanentn :	
+						export class UserDetailComponent {
+
+						  private route = inject(ActivatedRoute);
+						  constructor() {
+							// Route params (e.g., /users/101 → 101)
+							console.log('User Id:', this.route.snapshot.params['id']);
+							
+							// Query params (?role=admin)
+							console.log('Role:', this.route.snapshot.queryParams['role']);
+							
+							// Fragment (#profile)
+							console.log('Fragment:', this.route.snapshot.fragment);
+							
+							// Full static URL segments
+							console.log('URL:', this.route.snapshot.url);
+							
+							// Route data
+							console.log('Data object:', this.route.snapshot.data);
+						  }
+						}
+
+			
+			Reading parameters on a route
