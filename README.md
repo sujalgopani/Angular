@@ -4354,5 +4354,381 @@ Signal : used like a store or set or update value
 						  }
 						}
 
+------------
+15/12/2025
+----------
+○ Reading parameters on a route :
+	○ Route Parameters :
+		- Route parameters allow you to pass data to a component through the URL. This is useful when you want to display specific content based on an identifier in the URL, like a user ID or a product ID.
+		- You can define route parameters by prefixing the parameter name with a colon (:).
+		- here we can consider the reading the parameter of the URL.
+		
+		Ex.
+			Route :
+				  {
+					path :'child/:id',
+					component : Parent,
+					
+				  }
+				  
+			Nav.html :				
+				<a [routerLink]="['child',2025]">Click Here</a>
+				<router-outlet></router-outlet>
 			
-			Reading parameters on a route
+			Parent.ts :
+				@Injectable({providedIn : 'root'})
+				@Component({
+				  selector: 'app-parent',
+				  template: `
+					<h2>Parent Component</h2>
+					<h1>Product Details: {{ productId() }}</h1>
+				   `,
+				  imports: []
+				})
+
+
+				export class Parent { 
+				  productId = signal('');
+				  private activatedRoute = inject(ActivatedRoute); // Here ActivatedRoute is the used for the taking information about the URL.
+
+				  constructor(){
+					this.activatedRoute.params.subscribe((i)=>{
+					  this.productId.set(i['id']);
+					})
+				  }
+				  // here subscribe is the used for when url parameter value is change then fetch again from url.
+				}
+	○ Query Parameters :
+		 - Query parameters provide a flexible way to pass optional data through URLs without affecting the route structure. Unlike route parameters, query parameters can persist across navigation events and are perfect for handling filtering, sorting, pagination, and other stateful UI elements.
+		 - it's like a /child?id=191&model=2025&color=black so it's a fetched by the queryparams property of the ActivatedRoute.
+		 Ex.(simple Example)
+		 /profile?name=Sujal&age=22 // passed this
+		 
+		 home.ts :
+			@Component({
+			  selector: 'app-home',
+			  template: `
+				<button (click)="go()">Go with Query</button>
+			  `
+			})
+			export class HomeComponent {
+			  private router = inject(Router);
+
+			  go() {
+				this.router.navigate(['/profile'], {
+				  queryParams: {
+					name: 'Sujal',
+					age: 22
+				  }
+				});
+			  }
+			}
+		
+			route.ts :
+				export const routes = [
+				  { path: 'profile', component: ProfileComponent }
+				];
+
+			profile.ts :
+				@Component({
+				  selector: 'app-profile',
+				  template: `
+					<h2>Profile Page</h2>
+					<p>Name : {{ name }}</p>
+					<p>Age : {{ age }}</p>
+				  `
+				})
+				export class ProfileComponent {
+				  private route = inject(ActivatedRoute); // reference for current url
+
+				  name = ''; // empty string now
+				  age = 0; // 0 value now
+
+				  constructor() {
+					this.route.queryParams.subscribe(q => { 
+					  this.name = q['name'];
+					  this.age = q['age'];
+					});
+				  }
+				  // here fetch the url querystring value by queryparams with subscribe
+				  // what happen here : when use redirect to this url with querystring then those querystring value is fetched here and show in the html page.
+				}
+				
+		Ex(Major Example)
+		- here make one select element there when the user select select other option then querystring is change with no refreshing page and chnage one key other key-value is as it is.
+		- and one option is Add Page that is increment the page querystring key 1 to so on and also here page named key is updatable other is as it is.
+		
+		route.ts :
+			{
+				path: 'child',
+				component: Parent
+			}
+			
+		Nav.ts :
+			export class Navv {
+				item = inject(Router);
+				qs(){
+				this.item.navigate(['/child'],{
+				  queryParams:{ // querystring pass here
+					category:'Fast-Food',
+					menuitem:'Name',
+					page:1
+				  }
+				})
+				}
+				}
+
+		Nav.html :
+			<button (click)="qs()">Go to Querystring</button>
+			// when button is clicked the pass the URL with querystring.
+			<router-outlet></router-outlet>
+			
+		Parent.ts :
+			@Component({
+			  selector: 'app-parent',
+			  template: `
+				<h2>Product List</h2>
+				<div>// first time passed querystring value is see here
+				  <p>category : {{category}}</p>
+				  <p>MenuItem : {{menuitem}}</p>
+				  <p>Page : {{page}}</p>
+				</div> 
+
+				<select (change)="Changeopt($event)"> // when the selected option is changed then run the function Changeopt
+				  <option value="">Select</option>
+				  <option value="name">Name</option>
+				  <option value="price">Price</option>
+				  <option value="date">Date</option>
+				</select>
+				<hr>
+				<button (click)="newPage()">Next Page</button> // call function when button is click
+				<button (click)="this.item.navigateByUrl('')">Back</button>
+				
+			   `,
+			  imports: []
+			})
+
+
+			export class Parent { 
+			  private activatedRoute = inject(ActivatedRoute);
+			  item = inject(Router)
+
+			  category = '';
+			  menuitem = '';
+			  page= 1;
+
+			  constructor(){
+				  this.activatedRoute.queryParams.subscribe((i)=>{
+				  // here get the querystring value by it's value.
+				  this.category = i['category']
+				  this.menuitem = i['menuitem'] || 'all';
+				  this.page = Number(i['page']) || 1;
+				  this.loadprint() // call the load function
+				}) 
+			  }
+
+				// this function is call when the change the optional
+			  Changeopt(event:Event){
+					// in this line get the changed option value
+				  const menuitem = (event.target as HTMLSelectElement).value;
+				  this.item.navigate([],{
+					// assign new option value to querystring key
+					queryParams:{menuitem},
+					// and merge the querystring with other key just this key is change
+					queryParamsHandling:'merge'
+				  })
+			  }
+
+				// updated option is console for testing
+			  loadprint(){
+				console.log(`Category : ${this.category} \nMenuitems :${this.menuitem} \nPage :${this.page} `);
+			  }
+			  
+			  // when click new page button then run this function
+			  newPage(){
+				this.item.navigate([],{
+				// assign the page key to new value with (+1)
+				  queryParams:{page:this.page+1},
+				  // same key merge with other querystring keys.
+				  queryParamsHandling:'merge'
+				})
+			  }
+			}
+			
+	
+	○ Matrix Parameters :
+		- Matrix parameters are optional parameters that belong to a specific URL segment, rather than applying to the entire route. Unlike query parameters which appear after a ? and apply globally, matrix parameters use semicolons (;) and are scoped to individual path segments.
+		-Matrix parameters are useful when you need to pass auxiliary data to a specific route segment without affecting the route definition or matching behavior. Like query parameters, they don't need to be defined in your route configuration.
+
+		Ex.
+			// URL format: /path;key=value
+			// Multiple parameters: /path;key1=value1;key2=value2
+			// Navigate with matrix parameters
+			this.router.navigate(['/awesome-products', { view: 'grid', filter: 'new' }]);
+			// Results in URL: /awesome-products;view=grid;filter=new
+		
+	○ Detect active current route with RouterLinkActive :
+		- in this concept when the user click the link or anchor tag that time attribute name 'routerLinkActive' has class apply on current clickable link.
+		- we give to the class name to 'routerLinkActive' when the use click the link then the given class is apply on this link or anchor tag.
+		
+		Ex.			
+			<nav>
+			  <a routerLink="/child" routerLinkActive="active-link">Home</a>
+			  <a routerLink="/sujal" routerLinkActive="active-link">About</a>
+			</nav>
+		
+			.active-link {
+				  background-color: red;
+				  color: white;
+				  text-decoration: none;
+				  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+				}
+			// when use click the any link then define class is apply on the link.
+			
+			
+			<!-- Space-separated string syntax -->
+			// here we give the multiple class by seprated space
+			<a routerLink="/user/bob" routerLinkActive="class1 class2">Bob</a>
+			
+			<!-- Array syntax -->
+			// here same give the multiple class by using array.
+			<a routerLink="/user/bob" [routerLinkActive]="['class1', 'class2']">Bob</a>
+			
+		○ Route matching strategy :
+			- given own exact url and user hit those url so apply given class but user not hit exact url so not apply classes on the current link.
+			Ex.
+				
+				<a [routerLink]="['/user/jane']" routerLinkActive="active-link">
+				  User
+				</a>
+				
+				<a [routerLink]="['/user/jane/role/admin']" routerLinkActive="active-link">
+				  Role
+				</a>
+			// here when the user go to the /user/jane then apply the active-link class apply and if user gone /user/jane/role/admin then also apply active-link.
+			// on /user/jane apply active-link class because it's a part of the /user/jane/role/admin url.
+		
+		○ Only apply RouterLinkActive on exact route matches :
+			- in above section not apply better class because some url is a subset of other urls so apply multiple class on multiple time so use the 'routerLinkActiveOptions'.
+			- it's a used when exact matching concept apply.
+			
+			Ex.	
+			<nav>
+			  <a [routerLink]="['/sujal']" routerLinkActive="active-link"   [routerLinkActiveOptions]="{exact: true}">Home</a>
+			  <a [routerLink]="['/sujal/edit']" routerLinkActive="active-link"   [routerLinkActiveOptions]="{exact: true}">About</a>
+			</nav>
+			// here user exact go to the /sujal then apply active-link otherwise not apply and also /sujal/edit goto then apply active-link by usign the exact:true.
+			
+		○ Apply RouterLinkActive to an ancestor :
+			- in this example if the any of the anchor is exact then apply class on the div.
+			
+			Ex.
+				<div routerLinkActive="active-link"   [routerLinkActiveOptions]="{exact: true}">
+					<a routerLink="/sujal" >Home</a>
+					<a routerLink="/sujal/edit">About</a>
+				</div>
+			
+	○ Redirecting Routes :
+		- Route redirects allow you to automatically navigate users from one route to another. Think of it like mail forwarding, where mail intended for one address is sent to a different address. This is useful for handling legacy URLs, implementing default routes, or managing access control.
+		
+		○ How to configure redirects :
+			- You can define redirects in your route configuration with the redirectTo property. This property accepts a string.
+
+			Ex.
+				import { Routes } from '@angular/router';
+				const routes: Routes = [
+				  // Simple redirect
+				  { path: 'marketing', redirectTo: 'newsletter' },
+				  // Redirect with path parameters
+				  { path: 'legacy-user/:id', redirectTo: 'users/:id' },
+				  // Redirect any other URLs that don’t match
+				  // (also known as a "wildcard" redirect)
+				  { path: '**', redirectTo: '/login' }
+				];
+		
+			In this example, there are three redirects:
+
+				- When a user visits the /marketing path, they are redirected to /newsletter.
+				- When a user visits any /legacy-user/:id path, they are routed to the corresponding /users/:id path.
+				- When a user visit any path that’s not defined in the router, they are redirected to the login page because of the ** wildcard path definition.
+				
+		○ Understanding pathMatch :
+			
+			Value	    Description
+			==================================================
+			'full'	    The entire URL path must match exactly
+			'prefix'	Only the beginning of the URL needs to match
+			
+		○ pathMatch: 'prefix' :
+			- in this topic check the starting url like in this '/sujal/std/blog' so it's check the onlt start /sujal.
+			Ex.
+				export const routes: Routes = [
+				  // This redirect route is equivalent to…
+				  { path: 'news', redirectTo: 'blog },
+				  // This explicitly defined route redirect pathMatch
+				  { path: 'news', redirectTo: 'blog', pathMatch: 'prefix' },
+				];
+					
+				/news redirects to /blog
+				/news/article redirects to /blog/article
+				/news/article/:id redirects to /blog/article/:id
+				
+		○ pathMatch: 'full' :
+			- in this topic check the full path after working can gone next step.
+			Ex.
+				export const routes: Routes = [
+				  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+				];
+				// in this link check between '' all url and then take action.
+			
+			
+		○ Conditional redirects :
+			- The redirectTo property can also accept a function in order to add logic to how users are redirected.
+			- The function only has access part of the ActivatedRouteSnapshot data since some data is not accurately known at the route matching phase. Examples include: resolved titles, lazy loaded components, etc.
+			- It typically returns a string or URLTree, but it can also return an observable or promise.
+			
+			Ex.
+				Route.ts :
+					export const routes: Routes = [
+					  {
+						path: 'sujal/:lo',
+						component: Parent
+					  },
+					  {
+						path :'child/:id',
+						component : ChildComponent,
+						
+					  },
+					  {
+						path:'sujal',
+						redirectTo : (activatedRouteSnapshot)=>{
+						// here get the querystring value
+						  const par = activatedRouteSnapshot.queryParams['sub'];
+						  const tim = new Date().getHours();
+							
+						// here check the querystring value is equal to Fd then redirct to given path other wise redirct to sujal/2955 path or url
+						  if(par === 'Fd'){
+							return `child/${tim}`
+						  }
+						  return `sujal/2955`
+						}
+					  }
+					];
+					
+				Nav.html :
+					<button (click)="qs()">Go to Querystring</button>
+				
+				Nav.ts :
+					export class Navv {
+					  item = inject(Router);
+					  qs(){
+					   this.item.navigate(['sujal'],{
+						queryParams:{
+						  sub:'Fd'
+						}
+					   })
+					  }
+					}
+				
+	○ Control route access with guards :
+		- ......
