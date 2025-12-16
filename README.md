@@ -4398,6 +4398,7 @@ Signal : used like a store or set or update value
 				  }
 				  // here subscribe is the used for when url parameter value is change then fetch again from url.
 				}
+				
 	○ Query Parameters :
 		 - Query parameters provide a flexible way to pass optional data through URLs without affecting the route structure. Unlike route parameters, query parameters can persist across navigation events and are perfect for handling filtering, sorting, pagination, and other stateful UI elements.
 		 - it's like a /child?id=191&model=2025&color=black so it's a fetched by the queryparams property of the ActivatedRoute.
@@ -4728,7 +4729,347 @@ Signal : used like a store or set or update value
 						}
 					   })
 					  }
-					}
-				
+				}
+
+------------
+16/12/2025
+----------		
 	○ Control route access with guards :
-		- ......
+		- Route guards are functions that control whether a user can navigate to or leave a particular route. They are like checkpoints that manage whether a user can access specific routes. Common examples of using route guards include authentication and access control.
+		
+		○ Creating a route guard :
+			- You can generate a route guard using the Angular CLI:
+				ng generate guard CUSTOM_NAME(guard name)
+			
+			◘ TIP: You can also create a route guard manually by creating a separate TypeScript file in your Angular project. Developers typically add a suffix of -guard.ts in the filename to distinguish it from other files.	
+			
+		○ Route guard return types :
+			Return types	Description
+			boolean			true allows navigation, false blocks it (see note for CanMatch route guard)
+			
+			UrlTree or  	Redirects to another route instead of blocking
+			RedirectCommand	
+			
+			Promise<T> or 	Router uses the first emitted value and then unsubscribes
+			Observable<T>	
+			
+		○ Types of route guards :
+			◘ CanActivate
+			◘ CanActivateChild
+			◘ CanDeactivate
+			◘ CanMatch
+		
+			○ CanActivate :
+				- in this guard used when the user hit inner url but user not login so this guard is check the user are login or not if it is then access the inner url but if not then it's redirect to login page.
+				- so inshort that is the like a checkpoint which is check all user for login or not.
+				
+				Ex.
+					Guard :
+						
+						export const logincheckGuard: CanActivateFn = (route, state) => {
+						  debugger  
+						  const rout = inject(Router);
+
+						   rout.navigate(['/login']);
+							return false;
+						};
+						
+					Route File :
+						export const routes: Routes = [
+						  { 
+							path:'',
+							redirectTo:'login',
+							pathMatch:'full'
+						  },
+						  {
+							path:'login',
+							component:Ulogin
+						  },
+						  {
+							// access this route before apply logincheckGuard Guard logic
+							path: 'protect',
+							component: Parent,
+							canActivate:[logincheckGuard] 
+						  }
+						];
+					// what happen here : when user access this /protect url then apply Guard login to redirect /login url.
+				
+			○ CanActivateChild :
+				- This Guard is helpfull for all child componanent protection.
+				- apply single guard logic on all child componanent url.
+				Ex.
+					here we can consider the Guard logic is same as a canActivate guard logic.
+				
+				Route File :
+					{
+						path:'login',
+						component:Ulogin,
+						canActivateChild:[logincheckGuard],
+						children :[
+						  {path:'protect1',component:ChildComponent},
+						  {path:'protect2',component:Ulogin}
+						]
+					  }
+					// login route has 2 child so we can apply one single time guard and apply both children, so user hit the url protect1 & 2 then apply guard logic on this 2 child.
+					
+			○ CanDeactivate :
+				- suppose we can fill the one long form and incase we can click the close or back button then page redirect to back page but problem is our form data is lost.
+				- For this problem solution is CanDeactivate is used below condition incase click the back or close button then one conform popup is happen then asking the are you sure close the button or not.
+				Ex.
+					Ulogin.ts :
+						@Component({
+						  selector: 'app-ulogin',
+						  template: `
+							<h2>Login Page</h2>
+							<form>
+						  <div style="margin: 4%;">
+							<label for="uname">Username :</label>
+							<input type="text" placeholder="Username" name="uname" id="uname">
+						  </div>
+						  <div style="margin: 4%;">
+							<button type="button">Login Now !</button>
+						  </div>
+						</form>
+						  `
+						})
+						
+						export class Ulogin {
+						  private hasUnsaved = true;
+						  
+						  // deactivate function is here declare.
+						  canDeactivate(): boolean {
+							if (this.hasUnsaved) {
+							  return confirm("Are You Sure Leave The Page ?");
+							}
+							return true;
+						  }
+
+						  savechanges() {
+							this.hasUnsaved = false;
+						  }
+
+						}
+					
+					Guard File :
+						export const deactivegGuard: CanDeactivateFn<unknown> = (component,currentRoute,currentstate, nextstate) => {
+						// here when the click back button then check componanent canDeactivate function is available or not so it's available then it's call.
+						  if(component && typeof(component as any).canDeactivate == 'function'){
+							// canDeactivate function is available then return now
+							return (component as any).canDeactivate();
+						  }
+						  // if not available then not do anything
+						  return true;
+						};
+						
+						==============================================================
+						component: T - The component instance being deactivated
+						currentRoute: ActivatedRouteSnapshot - Contains information about the current route
+						currentState: RouterStateSnapshot - Contains the current router state
+						nextState: RouterStateSnapshot - Contains the next router state being navigated to
+						==============================================================
+						
+					Route File :
+						export const routes: Routes = [
+						  { 
+							path:'',
+							component:Navv
+						  },
+						  { 
+						  // apply deactivegGuard guard on this componanent
+							path:'Login',
+							component:Ulogin,
+							canDeactivate:[deactivegGuard]
+						  },
+						  {
+							path:'Home',
+							component:Parent
+						  }
+						];
+
+				○ CanMatch :
+					- CanMatch is the used when the some unauthorised user occur then componanent is not load on the browser.
+					- suppose one Employee want to access the Admin Or Manager Url that time CanMatch can not load the admin or manager componanent on the browser, admin or manager Url is only read only for unauthorised user.
+					- so role base authentication is follow this guard.
+					
+					EX.
+						nav.ts :
+							import { Component} from '@angular/core';
+							import { RouterLink, RouterOutlet } from '@angular/router';
+
+							@Component({
+							  selector: 'app-nav',
+							  imports: [RouterOutlet, RouterLink],
+							  templateUrl: './nav.html',
+							  styleUrl: './nav.css',
+							})
+
+							export class Navv {
+							// declare function to save the localstorage for user role.
+							  setRole(Role :string){
+								console.log("Set Done !");
+								localStorage.setItem('user',Role);
+							  }
+							}
+							
+						nav.html :
+						// here click the button and set the user rolw as a admin or manager
+							<button (click)="setRole('Admin')">As Admin</button>
+							<hr>
+							<button (click)="setRole('Manager')">As Manager</button>
+							<hr>
+							<a routerLink="Admin">Admin</a> <hr>
+							<a routerLink="Manager">Manager</a>
+							<router-outlet></router-outlet>
+							
+						rolebasedguard.ts :
+							import {  CanMatchFn } from '@angular/router';
+							export const roleBaseGuard: CanMatchFn = (route, state) => {
+							// here match the user role from the localStorage for admin,manager
+							  const userrole = localStorage.getItem('user');
+							// here check the path for admin and userrole value
+							  if(route.path === 'Admin' && userrole === 'Admin'){
+								return true;
+							  }else if(route.path === 'Manager' && userrole === 'Manager'){
+								return true;
+								// if user has no specific role then it's only read only.
+							  }else{
+								return false;
+							  }
+							};
+
+						route File :	
+							export const routes: Routes = [
+							  { 
+								path:'',
+								component:Navv
+							  },
+							  // apply on Ulogin page
+							  { 
+								path:'Admin',
+								component:Ulogin,
+								canMatch : [roleBaseGuard]
+							  },
+							  // also apply the guard here
+							  {
+								path:'Manager',
+								loadComponent:()=>import('./parent/parent').then(r => r.Parent),
+								canMatch : [roleBaseGuard]
+							  }
+							];
+						
+		○ Data resolvers :
+			- Data resolvers allow you to fetch data before navigating to a route, ensuring that your components receive the data they need before rendering. This can help prevent the need for loading states and improve the user experience by pre-loading essential data.
+			- Before Rendering the Url resolvers are get the data from API and that after render componanent.
+			
+			○ What are data resolvers?
+				- A data resolver is a service that implements the ResolveFn function. It runs before a route activates and can fetch data from APIs, databases, or other sources. The resolved data becomes available to the component through the ActivatedRoute.
+			
+			○ Why use data resolvers?
+				- Prevent empty states: Components receive data immediately upon loading
+				- Better user experience: No loading spinners for critical data
+				- Error handling: Handle data fetching errors before navigation
+				- Data consistency: Ensure required data is available before rendering which is important for SSR
+			
+		○ Creating a resolver :
+			Ex.
+				resolver File :
+					export const userResolver: ResolveFn<any> = (route,state) => {
+					// here fetch the record from the api by user id.
+						// user/:id  get id from this url
+						 const parentid = route.paramMap.get('id');
+						 // fetch the API by id
+						 return fetch(`https://jsonplaceholder.typicode.com/todos/${parentid}`).then(res=>res.json());
+						};
+				
+				Route File :
+					 {
+						path:'user/:id',
+						component : Parent,
+						// apply resolver and take the value to username variable
+						resolve:{
+						  username:userResolver
+						}
+					  }
+				
+				parent.ts :					
+					@Component({
+					  selector: 'app-parent',
+					  template: `
+						  <h2>Dashboard Parent</h2>   
+							<p style="color:red">❌ Data load થવામાં error આવ્યો</p>
+							// display API data
+							<h4>User Id : {{ user.id }}</h4>
+							<h4>Title : {{ user.title }}</h4>
+						  <router-outlet></router-outlet>
+					   `,
+					  imports: [RouterOutlet]
+					})
+
+
+					export class Parent { 
+					// takebale variable API value
+					  user:any;
+					  // ActivatedRoute for get the current url information
+					  route = inject(ActivatedRoute);
+
+					  ngOnInit(){
+					  // put the fetched data to variable
+						  this.user = this.route.snapshot.data['username'] ; 
+					  }
+					}
+					
+				nav.html :
+					<a [routerLink]="['user','51']">Parent</a> <hr>
+					
+			○ Using withComponentInputBinding :
+				- using this we can give to the API value to @Input() to direct into component.
+				Ex.
+					main.ts :
+						bootstrapApplication(App, {
+						  providers: [
+						  // withComponentInputBinding is magical word to give the value direct componanent
+							provideRouter(routes, withComponentInputBinding())
+						  ]
+						});
+						
+					// change the code to componanent where all API data is display
+					// put the data into @Input() direct to componanent
+					Parent.ts :
+						export class Parent { 
+						  route = inject(ActivatedRoute);
+						  @Input() user : any; // here we can give the api value to direct @Input() instead of user:any;
+						  ngOnInit(){
+							  this.user = this.route.snapshot.data['username'] ; 
+						  }
+						}
+						
+			○ Error handling in resolvers :
+				Resolver File :
+					import { ResolveFn, Router } from '@angular/router';
+					import { inject } from '@angular/core';
+
+					export const userResolver: ResolveFn<any> = async (route, state) => {
+					  let parentid = route.paramMap.get('id');
+					  const router = inject(Router);
+					  try{
+						const res=  await fetch(`https://jsonplaceholder.typicode.com/todos/${parentid}`);
+						// check the API throw response or not
+						if(!res.ok){
+						  throw new Error("User Not Found !");
+						}
+						// if throw responce then return to componanent 
+						return res.json();
+						// handle error
+					  }catch(error){
+						console.log(error);
+						router.navigate(['/err'],{
+						  queryParams:{parentid : parentid},
+						  queryParamsHandling:'merge'
+						});
+						return false;
+					  }
+					};
+					
+				// all other file is same as above example.
+				
+			○ Managing errors through a subscription to router events......
