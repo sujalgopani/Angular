@@ -4924,8 +4924,10 @@ Signal : used like a store or set or update value
 						rolebasedguard.ts :
 							import {  CanMatchFn } from '@angular/router';
 							export const roleBaseGuard: CanMatchFn = (route, state) => {
+							
 							// here match the user role from the localStorage for admin,manager
 							  const userrole = localStorage.getItem('user');
+							  
 							// here check the path for admin and userrole value
 							  if(route.path === 'Admin' && userrole === 'Admin'){
 								return true;
@@ -5072,4 +5074,258 @@ Signal : used like a store or set or update value
 					
 				// all other file is same as above example.
 				
-			○ Managing errors through a subscription to router events......
+-------------
+17/12/2025
+----------
+		○ Managing errors through a subscription to router events :
+			- You can also handle resolver errors by subscribing to router events and listening for NavigationError events. This approach gives you more granular control over error handling and allows you to implement custom error recovery logic.
+			- inshort if any condition guard, resolver, laxy load will fail then NavigationError is handle this error on browser side.
+			
+			Ex.
+			nav.html :
+				<a [routerLink]="['user','50']">Parent</a> <hr>
+
+			Resolver File :
+				export const userResolver: ResolveFn<any> = async (route, state) => {
+					const pid = route.paramMap.get('id');
+					const req = await fetch(`https://jsonplaceholder.typicode.com/todos/${pid}`);
+					if(!req.ok){
+					  throw new Error("User Not Valid !");
+					}else{
+					  return req.json();
+					}
+				};
+				// here if the API Response Is Not satifield And API Will Down by it's parameter then throw the error otherwise is fetch the Data from API.
+				
+			Routes File :
+				{
+					path:'user/:id',
+					component : Parent,
+					resolve:{data:userResolver}
+				}
+				// apply the resolver here
+				
+			Parent.ts :
+				@Component({
+				  selector: 'app-parent',
+				  template: `
+					  <h2>Dashboard Parent</h2>  
+					  <router-outlet></router-outlet>
+				   `,
+				  imports: [RouterOutlet]
+				})
+				// if the api is fetched then show only <h2> tag.
+				
+			App.ts :
+				
+				export class App {
+				  constructor(private router: Router) {
+					this.router.events.subscribe(event => {
+					  if (event instanceof NavigationError) {
+						console.log('Resolver Error Detected');
+						this.router.navigate(['/err']);
+					  }
+					});
+				  }
+				}
+				// here apply the NavigationError on app componanent.
+				// because the if the api is down then next componanent not loaded here if api is down then parent componanent is not render or loaded on browser so write the code of NavigationError On App.ts.
+				
+				// NavigationError -> it's help to when resolver or guard is fail then it's fired.
+				
+		○ Handling errors directly in the resolver :
+			- in this topic handle the error on direct resolver.
+			
+			Ex.
+				import { inject } from '@angular/core';
+				import { ResolveFn, Router } from '@angular/router';
+
+				export const userResolver: ResolveFn<any> = async (route) => {
+
+				  const router = inject(Router);
+				  const id = route.paramMap.get('id');
+
+				  try {
+					const res = await fetch(
+					  `https://jsonplaceholder.typicode.com/todos/${id}`
+					);
+
+					if (!res.ok) {
+					  throw new Error('User Not Found !');
+					}
+					return await res.json();
+
+				  } catch (error) {
+					console.error('Resolver handled error:');
+					return { error: true };
+				  }
+				};// use the try & catch to handle the erro on in the resolver
+				
+		○ Navigation loading considerations :
+			- While data resolvers prevent loading states within components, they introduce a different UX consideration: navigation is blocked while resolvers execute. Users may experience delays between clicking a link and seeing the new route, especially with slow network requests.
+			- in this topic when the user hit the request then during fetching data show the UI loader for use exeriance.
+			
+			Ex.
+				nav.ts :
+					constructor(private router: Router){
+					  isNavigating = computed(() => !!this.router.currentNavigation());
+					}
+					
+				nav.html :
+					@if(isNavigating()){
+					  <p>Loading........</p>
+					}
+				
+				// here when the api is searching the data that dring time <p>Loading....</p> is visible and then redirect to next page.
+				// when we write this loading.... before the result page.
+				Ex.	
+					searching area (available input or search button, apply here)(nav.html)
+						   |
+					search result page(parent.html, it's a result page)
+		
+		○ Reading parent resolved data in child resolvers :
+			- by inject ActivatedRoute and it's property snapshot.data[resolver name] to reading the resolver data.
+			
+			Ex.
+				resolver File(datatest, resolver name) :	
+					it's return 'sujal' only.
+					
+				route file :
+					{
+						path:'user',
+						component:Parent,
+						resolve:{data:datatest}
+					}
+				
+				Parent.ts :
+					export class Parent{
+						routes  = inject(ActivatedRoute);
+						ngOnInit(){
+							console.log(this.routes.snapshot.Data['data'])// route resolver variable
+						}
+					}
+				// when we hit the user or go Parent then console is give the resolver value 'sujal'
+				
+	○ Router Lifecycle and Events :
+		- in this topic when the url is hit and url are render component in this time duration some Events are activated this is the Router Lifecycle and it's Events.
+		- here we consider the fully life cycle of the Router and it's a evetns.
+		
+		🧭 High Level Navigation Flow : (Top to Bottom)
+			User click link
+			   ↓
+			NavigationStart
+			   ↓
+			Route match
+			   ↓
+			Guards
+			   ↓
+			Resolvers
+			   ↓
+			Component create
+			   ↓
+			NavigationEnd
+			
+		○ RouterLifeCycle Events :
+		
+		Events				Description
+		========-=============-================-===============-================-=============
+		NavigationStart		Occurs when navigation begins and contains the requested URL.
+		
+		RoutesRecognized	Occurs after the router determines which route matches the URL and contains the route state information.
+		
+		GuardsCheckStart	Begins the route guard phase. The router evaluates route guards like canActivate and canDeactivate.
+		GuardsCheckEnd		Signals completion of guard evaluation. Contains the result (allowed/denied).
+		ResolveStart		Begins the data resolution phase. Route resolvers start fetching data.
+		ResolveEnd			Data resolution completes. All required data becomes available.
+		NavigationEnd		Final event when navigation completes successfully. The router updates the URL.
+		NavigationSkipped	Occurs when the router skips navigation (e.g., same URL navigation).
+				
+		○ Error Events :
+						
+			Event				Description
+			NavigationCancel	Occurs when the router cancels navigation. Often due to a guard returning false.
+			NavigationError		Occurs when navigation fails. Could be due to invalid routes or resolver errors.
+		
+		○ How to subscribe to router events :
+			Ex.
+			
+			import { Component, inject, signal } from '@angular/core';
+			import { Router, NavigationError, RouterOutlet, NavigationStart, NavigationEnd, NavigationCancel } from '@angular/router';
+
+			@Component({
+			  selector: 'app-root',
+			  standalone: true,
+			  imports: [RouterOutlet],
+			  template: `
+			  @if (loading()) {
+				  <div class="loader">Loading...</div>
+				}
+				<router-outlet />
+				@if (error()) {
+				  <div class="error">{{ error() }}</div>
+				}
+			  `
+			})
+
+			export class App {
+			  private router = inject(Router);
+
+			  loading = signal(false);
+			  error = signal('');
+
+			  constructor() {
+				this.router.events.subscribe(event => {
+
+					// first time page hit the url
+				  if (event instanceof NavigationStart) {
+					this.loading.set(true);
+					this.error.set('');
+				  }
+					
+					// end of the url hitting
+				  if (event instanceof NavigationEnd) {
+					this.loading.set(false);
+					console.log('Analytics: Page view', event.url);
+				  }
+					
+					// if the guard return false then fire this
+				  if (event instanceof NavigationCancel) {
+					this.loading.set(false);
+					console.warn('Navigation Cancelled');
+				  }
+					
+					// if any error occur then this fired
+				  if (event instanceof NavigationError) {
+					this.loading.set(false);
+					this.error.set('Navigation failed!');
+					console.error(event.error);
+				  }
+				});
+			  }
+			}
+			// here some example to subscribe the Event on the component.
+		
+		○ How to debug routing events :
+			- Debugging router navigation issues can be challenging without visibility into the event sequence. Angular provides a built-in debugging feature that logs all router events to the console, helping you understand the navigation flow and identify where issues occur.
+			- When you need to inspect a Router event sequence, you can enable logging for internal navigation events for debugging. You can configure this by passing a configuration option (withDebugTracing()) that enables detailed console logging of all routing events.
+				Ex.
+					import {provideRouter, withDebugTracing} from '@angular/router';
+						const appRoutes: Routes = [];
+						bootstrapApplication(AppComponent, {
+						  providers: [provideRouter(appRoutes, withDebugTracing())],
+					});
+		
+		○ Common use cases :
+			- Loading indicators
+			- Analytics tracking
+			- Error handling
+	
+	○ Testing routing and navigation :
+		- pending !!!
+		
+		
+		
+		Other common Routing Tasks
+		
+		
+	
