@@ -5324,8 +5324,313 @@ Signal : used like a store or set or update value
 		- pending !!!
 		
 		
+-------------
+18/12/2025
+----------
+	○ Other common Routing Tasks :
+		○ Getting route information :
+			- 1.Add withComponentInputBinding :
+				- add this in the main.ts then access the route information by input in this condition not required the ActivateRoute Manually.
+				- all ts file access the route information by using input not a ActivatedRoute.
+				Ex.
+					main.ts :
+						bootstrapApplication(App,{
+						  providers:[
+							provideRouter(
+							  routes,withComponentInputBinding()
+						  )]
+						})
+						
+					nav.html :
+						<a [routerLink]="['/user', 1502]">Crisis Center</a>
+
+					nav.ts :
+						@Component({
+						  selector: 'app-parent',
+						  template: `
+							  <h2>User Dashboard</h2>
+							  <pre>{{ id() }}</pre>
+							  <router-outlet></router-outlet>
+						   `,
+						  imports: [RouterOutlet]
+						})
+
+						export class Parent { 
+						  id = input.required<string|undefined>();
+						}
+						
+		○ Add an Input to the Component (with service) :
+			- make the sevice to access the route infromation.
+			Ex.
+				product = computed(() =>
+				  this.productService.getProductById(this.id())
+				);
+				
+		○ Optional Parameter + Default Value :
+			- 🔴 Problem
+			
+				URL sometimes:
+				/products
+				
+				Sometimes:
+				/products?id=10
+				
+				Solution :
+					id = input.required({
+					  transform: (value: string | undefined) => value ?? '1'
+					});
+					
+					
+					id = input<string | undefined>();
+					finalId = linkedSignal(() => this.id() ?? '1');
+					
+					/products?id=5	5 // if id is available then access
+					/products	1	// otherwise 1 is default
 		
-		Other common Routing Tasks
+		○ Displaying 404 Page :
+			- when router not declare and we can access it ,then throw a error so where wildcard route is helping.
+			Ex.
+				const routes: Routes = [
+				  { path: 'products', component: ProductListComponent },
+				  { path: '**', component: PageNotFoundComponent } // if the route not find then PageNotFoundComponent is render
+				];
 		
+		○ Link Parameters Array (routerLink) :
+			- 🔹 Simple Navigation :
+				Ex.
+					<a [routerLink]="['/products']">Products</a>
+			
+			- 🔹 Route Parameter :
+				Ex.
+					<a [routerLink]="['/products', 5]">View Product</a>
 		
+		○ Summary
+			Topic						Meaning
+			=========================   ====================
+			withComponentInputBinding	Route → Component input
+			input.required				Mandatory param
+			transform					Default value
+			**							404 page
+			routerLink array			Smart navigation
+			Child routes				Nested routing
+			Hash strategy				No server config
+		
+
+○ Creating custom route matches :
+	- The Angular Router supports a powerful matching strategy that you can use to help users navigate your application. This matching strategy supports static routes, variable routes with parameters, wildcard routes, and so on. Also, build your own custom pattern matching for situations in which the URLs are more complicated.
 	
+	○ Objectives
+		- Implement Angular's UrlMatcher to create a custom route matcher.
+		- here we can apply the custom logic to hit the URL from the user side and check the url parameter which is satifield for our custom router, and it's all happen by the UrlMatcher.
+		
+		Ex.
+			- here we can check the url parameter is always star with the @ and not consider the '-'. like a /@sujal, /@angular.
+			
+			Ex.
+				angular.json :
+					- if this code is available in the json file so rapidlly Delete.
+					 "server": "src/main.server.ts",
+						"outputMode": "server",
+						"ssr": {
+						  "entry": "src/server.ts"
+						}
+						// beacause the this is affected in the custom router concept.
+						
+				main.ts :
+					bootstrapApplication(App,{
+					  providers:[
+						provideRouter(
+						  routes,withComponentInputBinding()
+						)
+					  ]
+					}) // for the all parameter access by the @Input or input().
+					
+				routes file :
+					import { Routes, UrlSegment } from '@angular/router';
+					import { Parent } from './parent/parent';
+					import { Navv } from './nav/nav';
+					import { PageNotFound } from './NotFound/PageNotFound';
+
+
+					export const routes: Routes = [
+					  { 
+						path:'',
+						component:Navv
+					  },
+					  {
+						path:'user/:id',
+						component:Parent
+					  },
+					  {
+					  // here make the custom router logic.
+						matcher: (url) =>{ // url is the part of the UrlSegment	
+							// in url consider only 1 segment like /@SUJAL 	not a /@user/@sujal
+						  if(url.length === 1 && url[0].path.match(/^@[\w]+$/gm)){
+							  return {
+							consumed: url, // consume all full url
+							posParams: { // here take the final path here consider the 0 or first world of the url like here '@' and it slice and dashboard is consume all final path and give to componanent
+							dashboard: new UrlSegment(url[0].path.slice(1), {})}};
+						  }
+						  else{// if the route not matcher then it's return null and check next other routes
+							  return null;
+						  }
+					  },// if url match then render Parent componanent
+					  component: Parent
+					  },
+					  {
+						path:'**',
+						component:PageNotFound
+					  }
+					];
+
+				Parent.ts:
+					import { Component, Input } from "@angular/core";
+					import { RouterOutlet} from "@angular/router";
+
+					@Component({
+					  selector: 'app-parent',
+					  template: `
+						  <h2>User Dashboard</h2>
+						  <pre>{{ dashboard }}</pre>
+						  <router-outlet></router-outlet>
+					   `,
+					  imports: [RouterOutlet]
+					})
+
+					export class Parent { 
+					// routes dashboard url parameter is take and out in the @Input() because of withComponentInputBinding() in main.ts
+					  @Input() dashboard!: string;
+					}
+					
+		○ Rendering strategies in Angular :
+			- What are rendering strategies?
+				- Rendering strategies determine when and where your Angular application's HTML content is generated. Each strategy offers different trade-offs between initial page load performance, interactivity, SEO capabilities, and server resource usage.
+
+				○ Angular supports three primary rendering strategies:
+					○ Client-Side Rendering (CSR) - Content is rendered entirely in the browser
+					○ Static Site Generation (SSG/Prerendering) - Content is pre-rendered at build time
+					○ Server-Side Rendering (SSR) - Content is rendered on the server for the initial request for a route
+		
+				Ex.
+					- if we want to content file like html,js,css are loaded first in the browser and after some time visible on the client side or browser then used the CSR.
+					- if we want to content is static and no changes are apply on this file then used the SSG, it's immediate render on the browser like portfolio page, landing page etc.
+					- if we want to display server side dynamical data to the html page then we used the SSR.
+					
+		
+		○ Customizing route behavior :
+		
+			○ Handle canceled navigations :
+				- if the navigation is cancel the angular has 2 option one is forcefully placed back url and one is placed natually to back url.
+				canceledNavigationResolution: 'replace' | 'computed'
+				
+				replace is the forcefully placed the url and computed is natually placed.
+				
+			
+			○ React to same-URL navigations :
+				- in this topic when user reload the past reloaded url that time angular not consider because that is already hited so in this topic not happen like this.
+				- if the hited url is again hited that time Guard, Api are not call again.
+				Ex.
+					onSameUrlNavigation: 'ignore' | 'reload'
+				
+				here ignore is the default behavior in result foe this ignore componanent not reload again, ngOnInit() not call again, Guard Not apply, Resolver not call again or API is not call again.
+				- reload is the opposite work of the ignore.
+				
+			
+			
+			○ Control parameter inheritance :
+				- when one parent has multiple child then url is make like /rootparent/child/grandchild so when we access the rootparent router paramaeter value to child or grandchild.
+				- here use full the paramsInheritanceStrategy : 'always'.
+				- we make without or with paramsInheritanceStrategy.
+				
+				Ex.
+					routes file :
+						{
+							path: 'org/:orgId',
+							component: Ulogin,
+							children: [
+							  {
+								path: 'projects/:projectId',
+								component: ChildComponent,
+								children: [
+								  {
+									path: 'customers/:customerId',
+									component: Parent,
+								  },
+								],
+							  },
+							],
+						  }// here one Ulogin named Root parent, it's child is ChildComponent and it's  child is Parent.
+						  - so here when we access Ulogin parameter value to Parent componanent so very critical but paramsInheritanceStrategy is use.
+						
+				Without paramsInheritanceStrategy :
+				
+					Parent.ts :
+						import { Component, inject, Input } from "@angular/core";
+						import { ActivatedRoute, RouterOutlet} from "@angular/router";
+
+						@Component({
+						  selector: 'app-parent',
+						  template: `
+							  <h2>User Dashboard</h2>
+								<h4>Val0 : {{orgId}}</h4>
+								<h4>Val1 : {{projectId}}</h4>
+								<h4>Val2 : {{customerId }}</h4>
+							  <router-outlet></router-outlet>
+						   `,
+						  imports: [RouterOutlet]
+						})
+
+						export class Parent { 
+						  route = inject(ActivatedRoute);
+							// without paramsInheritanceStrategy we call parent.parent.parent .... it's complex
+						  orgId =this.route.parent?.parent?.snapshot.params['orgId'];
+						  projectId = this.route.parent?.snapshot.params['projectId'];
+						  customerId = this.route.snapshot.params['customerId'];
+
+						  ngOnInit(){
+							console.log(this.orgId);
+							console.log(this.projectId);
+							console.log(this.customerId);
+						  }
+						}
+				With paramsInheritanceStrategy :
+				
+					main.ts :
+						bootstrapApplication(App,{
+						  providers:[
+							provideRouter(
+							// in this changes are make the easy wokr to access the params globally
+							  routes,withRouterConfig({paramsInheritanceStrategy:'always'})
+							)
+						  ]
+						})
+					
+					Parent.ts :	
+						export class Parent { 
+						  route = inject(ActivatedRoute);
+							
+							// access as a simple way direct by name
+						  orgId =this.route.snapshot.params['orgId'];
+						  projectId = this.route.snapshot.params['projectId'];
+						  customerId = this.route.snapshot.params['customerId'];
+						  
+						}
+
+
+
+		
+		Decide when the URL updates..........
+	
+
+
+				
+						
+			 
+		
+			
+					
+				
+					
+				
+			
+				
