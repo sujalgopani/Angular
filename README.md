@@ -5613,23 +5613,261 @@ Signal : used like a store or set or update value
 						  orgId =this.route.snapshot.params['orgId'];
 						  projectId = this.route.snapshot.params['projectId'];
 						  customerId = this.route.snapshot.params['customerId'];
-						  
 						}
-
-
-
-		
-		Decide when the URL updates..........
-	
-
-
-				
 						
-			 
+-------------
+22/12/2025
+----------
+	○ Decide when the URL updates :
+		- urlUpdateStrategy determines when Angular writes to the browser address bar. The default 'deferred' waits for a successful navigation before changing the URL. Use 'eager' to update immediately when navigation starts. Eager updates make it easier to surface the attempted URL if navigation fails due to guards or errors, but can briefly show an in-progress URL if you have long-running guards.
+		- in this topic when the url is changed by own code that deside here.
+		- by using urlUpdateStrategy with 'deferred' or 'eager' is help to do this proccess.
+		- in this url hitting when the navigation is success then url is change otherwise not changed.
+		- By deferred : when we hit the something url hiting in this time duration one guard is fired and check one condition and this hited url is not satifield for that condition then deferred is apply rapidally on the changing url.
+		Ex.
+			- one guard check the localstorage value check like islogin is available or not if this available then it's redirect to /org otherwise redirect to '/login'.
+			- and other one make one routerlink '/org' and apply guard on '/org' so when we hit the '/org' then guard check islogin if available then redirect fastlly '/org' otherwise redirect direct '/login' and final url is /login.
+			
+			- same thing using the 'eager' if the guard is fail then first some micro second url is stay with '/org' and after some micro second is redirect to '/login'.
+			- so deferred or eager is work deferent by asynclly one deferred is redirect directlly or eager is take some micro second after redirect to '/login'.
+			
+			Ex.
+				logincheckGuard gurad :	
+					import { inject } from '@angular/core';
+					import { CanActivateFn, Router } from '@angular/router';
+
+
+					export const logincheckGuard: CanActivateFn = async(route, state) => {
+					  const router = inject(Router);
+					  await new Promise(res=>setTimeout(res,3000));
+					  const isLogin = localStorage.getItem('islogin');
+					  
+					  if (isLogin) {
+						return true;   
+					  }
+					  return router.parseUrl('/login');
+					};
+				
+				routerfile :
+					{
+						path: 'org',
+						component: Ulogin,
+						canActivate:[logincheckGuard]
+					},
+				
+				Main.ts :
+					bootstrapApplication(App,{
+					  providers:[
+						provideRouter(
+						  routes,withRouterConfig({urlUpdateStrategy:'eager' & 'defered(default select)'})
+						)
+					  ]
+					})
+				
+				Nav.html :
+					<button (click)="Islo()">Login</button>
+					<a [routerLink]="['org']">GO to</a>
+				
+				Nav.ts :
+					export class Navv {
+					  Islo(){
+						localStorage.setItem('islogin',"sujalLogin");
+					  }
+					}
+					
+		○ Choose default query parameter handling :
+			- in the queryParameter topic when the url is redirect then old new params are occur on the browser url when one url is hited with 2 paramaeter then new url is hitting then old paramaeter is remove and new paramaeter is apply.
+			- using defaultQueryParamsHandling in the main.ts with 3 option replace(default),merge,preserve.
+			- replace : new parameter replace old parameter.
+			- merge : new parameter merge with old parameter.
+			- preserve : if we want the old value then return old otherwise new.
+			
+			Ex.
+				main.ts :
+				bootstrapApplication(App,{
+				  providers:[
+					provideRouter(
+					  routes,withComponentInputBinding(),withRouterConfig({defaultQueryParamsHandling:'replace & merge & preserve'})
+					)
+				  ]
+				})
+				
+				nav.ts :
+					@Component({
+					  selector: 'app-nav',
+					  imports: [RouterOutlet, RouterLink],
+					  templateUrl: './nav.html',
+					  styleUrl: './nav.css',
+					})
+
+					export class Navv {
+					  item = inject(Router);
+
+					  gotoorg(){
+						this.item.navigate(['/org'])  
+					  }
+
+					  gotoorg2(){
+						this.item.navigate(['/org'],{
+						  queryParams:{december:"12thmonth"}
+						})
+					  }
+					}
+					
+				nav.html :
+					<button (click)="gotoorg()">Goto org</button>
+					<button (click)="gotoorg()">Goto org 2</button>
+	
+	○ Route reuse strategy :
+		- in the redirection method many componanent are import or destroy in between import or destroy much memory are busy so in this strategies are help to reuse the componanent after import one time means, if i import one componanent and angular can save it after other place we need to import those same componanent so multimple import is not satisfied for the angular app so there saved componanent instance is used.
 		
+		○ When to implement route reuse
+			Custom route reuse strategies benefit applications that need:
+			
+				Form state preservation - Keep partially completed forms when users navigate away and return
+				Expensive data retention - Avoid re-fetching large datasets or complex calculations
+				Scroll position maintenance - Preserve scroll positions in long lists or infinite scroll implementations
+				Tab-like interfaces - Maintain component state when switching between tabs
+				
+		○ Creating a custom route reuse strategy :
+			- The RouteReuseStrategy class provides five methods that control the lifecycle of route components:
+
+			Method			Description
+			shouldDetach	Determines if a route should be stored for later reuse when navigating away
+			store			Stores the detached route handle when shouldDetach returns true
+			shouldAttach	Determines if a stored route should be reattached when navigating to it
+			retrieve		Returns the previously stored route handle for reattachment
+			
+			shouldReuseRoute	Determines if the router should reuse the current route instance instead of destroying it during navigation
+			
+			shouldDetach = ask route the save or not
+			store		 = if saved then store otherwise not
+			shouldAttach = render time saved route can attach or create new instance
+			retrieve     = saved instance return
+			shouldReuseRoute = Routeconfig same use or not
+			
+			
+			Ex.
+				CustomRouteReuseStrategy.ts :
+					import { ActivatedRouteSnapshot, DetachedRouteHandle, Route, RouteReuseStrategy } from "@angular/router";
+
+					export class CustomRouteReuseStrategy  extends RouteReuseStrategy{
+					  private handler = new Map<Route | null, DetachedRouteHandle>();
+					 
+					  // check the permission is true or false (true then save false then not save destroy)
+					  override shouldDetach(route: ActivatedRouteSnapshot): boolean {
+						  return route.data['reuse'] === true;
+					  }
+
+					  // on the shouldDetach decision if true then save in the map otherwise not
+					  override store(route: ActivatedRouteSnapshot, handle: DetachedRouteHandle | null): void {
+						  if(handle && route.data['reuse']=== true){
+							const key= this.GetRouteKey(route);
+							this.handler.set(key,handle);
+						  } 
+					  }
+
+					  // when the user open the route then saved instance do reattached or new create
+					  override shouldAttach(route: ActivatedRouteSnapshot): boolean {
+						const key= this.GetRouteKey(route);
+						return route.data['reuse'] === true && this.handler.has(key);
+					  }
+
+					  // actual instance return from the map
+					  override retrieve(route: ActivatedRouteSnapshot): DetachedRouteHandle | null {
+						const key= this.GetRouteKey(route);
+						return route.data['reuse'] === true ?(this.handler.get(key) ?? null) : null;
+					  }
+					  
+					  override shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
+						return future.routeConfig === curr.routeConfig;
+					  }
+
+					  private GetRouteKey(router : ActivatedRouteSnapshot):Route | null{
+						return router.routeConfig;
+					  }
+					  
+					}
+					
+				main Or appconfig file :
+					    {provide: RouteReuseStrategy,useClass:CustomRouteReuseStrategy},
+
+				route file :
+					
+					export const routes: Routes = [
+					  { 
+						path:'',
+						component:Navv
+					  },
+					  {
+						path: 'org',
+						component:Ulogin,
+						data:['reuse'] // reuse concept apply here so one time import and reuse anywhere
+					  },
+					  {
+						path:'par',
+						component:Parent // not apply reuse concept one time import and after movment destroy
+					  },
+					  {
+						path:'**',
+						component:PageNotFound
+					  }
+					];
+			
+			○ Preloading strategy :
+				- when the follow simple way to load the componanent in the angular app there without Preloading strategies when we open /home then home load when we open /office then office componanent is load in between loader are in proccess and it's all about the waste of the time.
+				- so Preloading is the help to Put the all imported componanent behind the backgorund for use for the redirection time.
+				
+				Angular provides two preloading strategies out of the box:
+
+					Strategy		Description
+					
+					NoPreloading	The default strategy that disables all preloading. In other words, modules only load when users navigate to them
+					
+					PreloadAllModules	Loads all lazy-loaded modules immediately after the initial navigation
+				 
+				Ex.
+					Make First Custom Preloading Strategies:
+					
+					Preloadingst.ts :
+						
+					import { PreloadingStrategy, Route } from "@angular/router";
+					import { Observable, of } from "rxjs";
+
+					export class Preloadingst implements PreloadingStrategy {
+
+					  preload(route: Route, fn: () => Observable<any>): Observable<any> {
+						if(route.data?.['preload']){
+						  return fn();
+						}
+						return of(null);
+					  }
+					}
+					
+					router file :
+						{
+							path: 'org',
+							loadComponent:()=>import("../ulogin/ulogin").then(r=>r.Ulogin),
+							data:{preload:true} // preload apply
+						  },
+						  {
+							path:'par',
+							loadComponent:()=>import("./parent/parent").then(r=>r.Parent),
+							data:{preload:false} // preload not apply   
+						},
+					
+					Main.ts :
+						bootstrapApplication(App,{
+						  providers:[
+							provideRouter(
+							  routes,withPreloading(Preloadingst)
+							)
+						  ],
+						})
 			
 					
-				
+					
+					URL handling strategy.....
 					
 				
 			
