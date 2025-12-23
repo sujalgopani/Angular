@@ -5864,11 +5864,224 @@ Signal : used like a store or set or update value
 							)
 						  ],
 						})
+						
+	○ URL handling strategy :
+		- under this concept angular deside the which type of the url are angular handle, suppose the start with the '/app' all url are handle by angular and other like '/or','/opp' handle by other tool or application.
+		Ex.
+			urlUpdateStrategy class :
+				import { Injectable } from "@angular/core";
+				import { UrlHandlingStrategy, UrlTree } from "@angular/router";
+
+				Injectable()
+				export class urlhandlingstrategy implements UrlHandlingStrategy{
+				  
+				  shouldProcessUrl(url: UrlTree): boolean {
+				  // deside the which url is handle by angular
+					return url.toString().startsWith('/org');
+				  }
+				  extract(url: UrlTree): UrlTree {
+				  // if handle then return
+					return url;
+				  }
+				  merge(newUrlPart: UrlTree, rawUrl: UrlTree): UrlTree {
+					return newUrlPart;
+				  }
+				}
+				
+			appConfig.ts :
+				    {provide: UrlHandlingStrategy(strategy class),useClass:urlhandlingstrategy(own made class)},
 			
-					
-					
-					URL handling strategy.....
-					
+
+	○ Custom route matchers :
+		- when the user hit the undefine route then application is return the error like path not match like this so we can make the '**' wildcard route to redirect not found page.
+		- but when we create the custom matchers for whole application to apply custom matchers to wide application by using UrlMatchResult.
+		- there we define own custom rule to apply on the whole application.
+		
+		Ex.
+			Custom Url Matcher File :
+				import { UrlMatchResult, UrlSegment } from "@angular/router";
+
+				export function custommatching(segment:UrlSegment[]):UrlMatchResult|null{
+				  if(segment.length === 1 && segment.toString().startsWith('user-')){
+					return{
+					  consumed:segment,
+					  posParams:{
+						id: new UrlSegment(segment[0].toString().split('user-')[1],{}),
+					  }
+					}
+				  }
+				  return null;
+				}
+				// here simple example to make some simple rule for hiting the url 
+				// here when the user hit the 1 segment url like 1 segment = '/user','/test' that consider the matchers.
+				// '/sujal/test','/test/org' is not a 1 segment is the 2 segment url.
+				// also 1 segment is starwith 'user-' must be and it's return with consumed(consume the value from url),posParams(give to the parameter with value)
+				// that parameter is fetched or access by the componanent by ActivatedRoute.
+				// if the 'user-' or not affect this rule to other url then it's return null or nothing.
+				
+				(Easy)
+			Router File :
+				 {
+					matcher:custommatching,
+					component:Parent
+				 },
+			
+			Parent.ts :
+				@Component({
+				  selector: 'app-parent',
+				  template: `
+					  <h1>Parent</h1>
+					  <p>{{id}}</p>
+					  <router-outlet></router-outlet>
+				   `,
+				  imports: [RouterOutlet]
+				})
+
+				export class Parent { 
+				  id!:string;
+				  constructor(private item : ActivatedRoute){
+				  // access the value which is throw by the custom matcher
+					item.params.subscribe(e=>{
+					  this.id = e['id'];
+					  console.log(e.toString());
+					})
+				  }
+				}
 				
 			
+			==== Some Businness Login Apply (Advanced)
+					Custom Url Matcher File :
+						import { UrlMatchResult, UrlSegment } from "@angular/router";
+						export function custommatching(segment:UrlSegment[]):UrlMatchResult|null{
+						  if(segment.length === 0) return null;
+						  const fsegment = segment[0].path;
+
+						  if(fsegment.startsWith('sujal-')){
+							return {
+							  consumed:[segment[0]],
+							  posParams:{
+								mainheading :new UrlSegment(fsegment.split('-')[0],{}),
+								sujalneed:new UrlSegment(fsegment.split('-')[0].toUpperCase(),{}),
+								sujalhasmoney: new UrlSegment('true',{})
+							  }
+							}
+						  }
+
+						  if(fsegment.startsWith('test-')){
+							return {
+							  consumed:[segment[0]],
+							  posParams:{
+								mainheading :new UrlSegment(fsegment.split('-')[0],{}),
+								sujalneed:new UrlSegment(fsegment.split('-')[0].toUpperCase(),{}),
+								sujalhasmoney: new UrlSegment('true',{})
+							  }
+							}
+						  }
+
+						  
+						  return null;
+						}
+					
+					Parent.ts :
+						import { Component, inject, input, Input } from "@angular/core";
+						import { ActivatedRoute, RouterOutlet} from "@angular/router";
+
+						@Component({
+						selector: 'app-parent',
+						template: `
+						  <h1>Parent</h1>
+						  @if(is === 'true'){
+							<h3>{{head}} fired</h3>
+							<p>{{id}}</p>
+							<p>{{is}}</p>
+						  }
+						  <router-outlet></router-outlet>
+						`,
+						imports: [RouterOutlet]
+						})
+
+						export class Parent { 
+						id!:string;
+						is!:string;
+						head!:string;
+						constructor(private item : ActivatedRoute){
+						item.params.subscribe(e=>{
+						  this.id = e['sujalneed'];
+						  this.is = e['sujalhasmoney'];
+						  this.head = e['mainheading'];
+						  console.log(e.toString());
+						})
+						}
+						}
+					
+					// here apply multiple url matchers with multiple value passed like '/test-','/sujal-' or passed 3 value at a time and display dynamically in the componanent.
+					
+		○ Router reference :
+			- ○ Router events :
 				
+				Router event			Details
+				NavigationStart			Triggered when navigation starts.
+				RouteConfigLoadStart	Triggered before the Router lazy loads a route configuration.
+				RouteConfigLoadEnd		Triggered after a route has been lazy loaded.
+				RoutesRecognized		Triggered when the Router parses the URL and the routes are recognized.
+				GuardsCheckStart		Triggered when the Router begins the Guards phase of routing.
+				ChildActivationStart	Triggered when the Router begins activating a route's children.
+				ActivationStart			Triggered when the Router begins activating a route.
+				GuardsCheckEnd			Triggered when the Router finishes the Guards phase of routing successfully.
+				ResolveStart			Triggered when the Router begins the Resolve phase of routing.
+				ResolveEnd				Triggered when the Router finishes the Resolve phase of routing successfully.
+				ChildActivationEnd		Triggered when the Router finishes activating a route's children.
+				ActivationEnd			Triggered when the Router finishes activating a route.
+				NavigationEnd			Triggered when navigation ends successfully.
+				NavigationCancel		Triggered when navigation is canceled. This can happen when a Route Guard returns false during navigation, or redirects by returning a UrlTree or RedirectCommand.
+				
+				NavigationError			Triggered when navigation fails due to an unexpected error.
+				Scroll					Represents a scrolling event.
+		
+			○ Router terminology :
+				Router terminology
+
+				Router part			Details
+				Router				Displays the application component for the active URL. Manages navigation from one component to the next.
+				
+				provideRouter		provides the necessary service providers for navigating through application views.
+				
+				RouterModule		A separate NgModule that provides the necessary service providers and directives for navigating through application views.
+				
+				Routes				Defines an array of Routes, each mapping a URL path to a component.
+				
+				Route				Defines how the router should navigate to a component based on a URL pattern. Most routes consist of a path and a component type.
+				
+				RouterOutlet		The directive (<router-outlet>) that marks where the router displays a view.
+				
+				RouterLink			The directive for binding a clickable HTML element to a route. Clicking an element with a routerLink directive that's bound to a string or a link parameters array triggers a navigation.
+				
+				RouterLinkActive	The directive for adding/removing classes from an HTML element when an associated routerLink contained on or inside the element becomes active/inactive. It can also set the aria-current of an active link for better accessibility.
+				
+				ActivatedRoute		A service that's provided to each route component that contains route specific information such as route parameters, static data, resolve data, global query parameters, and the global fragment.
+				
+				RouterState			The current state of the router including a tree of the currently activated routes together with convenience methods for traversing the route tree.
+				
+				Link parameters array	An array that the router interprets as a routing instruction. You can bind that array to a RouterLink or pass the array as an argument to the Router.navigate method.
+				
+				Routing component	An Angular component with a RouterOutlet that displays views based on router navigations.
+				
+		○ <base href> :
+			- in this topic we can declare the starting point of the application.
+			- just apply in the index.html <base href> and declare the starting point of the application.
+			
+			Ex.
+				<base href="/angular-app/">
+				// above means the application starting by the /angular-app/.
+			
+		○ HashLocationStrategy :
+			- Use HashLocationStrategy by providing the useHash: true in an object as the second argument of the RouterModule.forRoot() in the AppModule.
+	
+			Ex.
+			
+				providers: [provideRouter(appRoutes, withHashLocation())];
+		
+			When using RouterModule.forRoot, this is configured with the useHash: true in the second argument: RouterModule.forRoot(routes, {useHash: true}).
+		
+	○ Route transition animations :
+		- 
