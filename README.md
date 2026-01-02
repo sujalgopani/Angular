@@ -6084,7 +6084,670 @@ Signal : used like a store or set or update value
 			When using RouterModule.forRoot, this is configured with the useHash: true in the second argument: RouterModule.forRoot(routes, {useHash: true}).
 		
 	○ Route transition animations :
-		- In this topic when we perform the routing that time apply the animation like fade in and fade out etc that's called the Route transition animation
-	
-	
+		- In this topic when we perform the routing that time apply the animation like fade in and fade out etc that's called the Route transition animatio.
 		
+		Ex.
+			Make First Animation conmoponent files :
+			animation.ts :
+				import { Component } from '@angular/core';
+				import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+				import { trigger, transition, style, animate, query, group } from '@angular/animations';
+
+				@Component({
+				  selector: 'app-animation',
+				  imports: [RouterOutlet,RouterLink],
+				  templateUrl: './animation.html',
+				  styleUrl: './animation.css',
+				  animations:[
+				  // give the animation name here
+					trigger('RouterAnimation',[
+					// decalre the animation apply from start to and or any where
+					  transition('* <=> *',[
+					  // fire query for the animation
+						query(':enter, :leave',[
+						  style({
+							position:'absolute',
+							width:'100%',
+							opacity:0
+						  })
+						  // option true is help to handle error
+						],{optional:true}),
+
+						// where the we wnter the page then applt this animation
+						query(':enter',[
+						  animate('500ms ease',style({opacity:1}))
+						],{optional:true})
+
+					  ])
+					])
+				  ]
+				})
+				export class Animation {
+				
+					// verified the animation by fetch the data of the route
+				  prepare(outlet:RouterOutlet){
+					return outlet.activatedRouteData?.['animation'];
+				  }
+				}
+				
+			animation.html :
+				<nav>
+				  <a routerLink="/Animation-Desk/Parent">Parent</a> |
+				  <a routerLink="/Animation-Desk/Child">Child</a> |
+				  <a routerLink="/Animation-Desk/ThirdParty">Other</a> 
+				</nav>
+				
+				// apply here animation
+				// give the animation attribute by it's name
+				<div [@RouterAnimation]="prepare(outlet)">
+				  <router-outlet #outlet="outlet"></router-outlet>
+				</div>
+
+○ Forms in Angular :
+	- Applications use forms to enable users to log in, to update a profile, to enter sensitive information, and to perform many other data-entry tasks.
+	- Angular provides two different approaches to handling user input through forms: reactive and template-driven.
+	- Both capture user input events from the view, validate the user input, create a form model and data model to update, and provide a way to track changes.
+	
+	 ○ Choosing an approach :
+		Reactive forms and template-driven forms process and manage form data differently. Each approach offers different advantages.
+
+Forms					Details
+Reactive forms:			Provide direct, explicit access to the underlying form's object model. Compared to template-driven forms, they are more robust: they're more scalable, reusable, and testable. If forms are a key part of your application, or you're already using reactive patterns for building your application, use reactive forms.
+
+Template-driven forms:	Rely on directives in the template to create and manipulate the underlying object model. They are useful for adding a simple form to an app, such as an email list signup form. They're straightforward to add to an app, but they don't scale as well as reactive forms. If you have very basic form requirements and logic that can be managed solely in the template, template-driven forms could be a good fit.
+				
+
+	○ Key differences :
+		
+		The following table summarizes the key differences between reactive and template-driven forms.
+
+									Reactive								Template-driven
+			Setup of form model		Explicit, created in component class	Implicit, created by directives
+			Data model				Structured and immutable				Unstructured and mutable
+			Data flow				Synchronous								Asynchronous
+			Form validation			Functions								Directives
+				
+	○ Common form foundation classes
+		
+		Both reactive and template-driven forms are built on the following base classes.
+
+			Base classes			Details
+			FormControl				Tracks the value and validation status of an individual form control.
+			FormGroup				Tracks the same values and status for a collection of form controls.
+			FormArray				Tracks the same values and status for an array of form controls.
+			ControlValueAccessor	Creates a bridge between Angular FormControl instances and built-in DOM elements.
+
+		○ Setup in reactive forms :
+			-	import {Component} from '@angular/core';
+				import {FormControl, ReactiveFormsModule} from '@angular/forms';
+				@Component({
+				  selector: 'app-reactive-favorite-color',
+				  template: ` Favorite Color: <input type="text" [formControl]="favoriteColorControl" /> `,
+				  imports: [ReactiveFormsModule], // import first ReactiveFormsModule
+				})
+				
+				export class FavoriteColorReactiveComponent {
+				  favoriteColorControl = new FormControl(''); // hadle single input by the FormControl
+				} 	
+				
+				
+		○ Setup in template-driven forms :
+			import {Component} from '@angular/core';
+			import {FormsModule} from '@angular/forms';
+			@Component({
+			  selector: 'app-template-favorite-color',
+			  template: ` Favorite Color: <input type="text" [(ngModel)]="favoriteColor" /> `,
+			  imports: [FormsModule], // import first FormsModule
+			})
+			export class FavoriteColorTemplateComponent {
+			  favoriteColor = ''; // handle the single variable inputs
+			}
+			
+		○ Mutability of the data model
+
+			The change-tracking method plays a role in the efficiency of your application.
+
+			○ Reactive forms :	Keep the data model pure by providing it as an immutable data structure. Each time a change is triggered on the data model, the FormControl instance returns a new data model rather than updating the existing data model. This gives you the ability to track unique changes to the data model through the control's observable. Change detection is more efficient because it only needs to update on unique changes. Because data updates follow reactive patterns, you can integrate with observable operators to transform data.
+			
+			○ Template-driven forms :	Rely on mutability with two-way data binding to update the data model in the component as changes are made in the template. Because there are no unique changes to track on the data model when using two-way data binding, change detection is less efficient at determining when updates are required.
+						
+		○ Form validation :
+			
+			Reactive forms :	Define custom validators as functions that receive a control to validate
+			Template-driven forms :	Tied to template directives, and must provide custom validator directives that wrap validation functions
+			
+○ Reactive forms :
+	- Reactive forms provide a model-driven approach to handling form inputs whose values change over time. This guide shows you how to create and update a basic form control, progress to using multiple controls in a group, validate form values, and create dynamic forms where you can add or remove controls at run time.
+	
+	Ex.
+		Reactiveform.ts :
+			import { CommonModule } from '@angular/common';
+			import { Component, inject } from '@angular/core';
+			import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormRecord, isFormArray, isFormControl, isFormGroup, isFormRecord, ReactiveFormsModule, StatusChangeEvent, TouchedChangeEvent, Validators, ValueChangeEvent } from '@angular/forms';
+			import { RouterLink } from '@angular/router';
+
+			@Component({
+			  selector: 'app-reactiveform',
+			  standalone: true,
+			  imports: [ReactiveFormsModule, RouterLink,CommonModule], // Imports Section
+			  templateUrl: './reactiveform.html',
+			  styleUrl: './reactiveform.css',
+			})
+
+			export class Reactiveform {
+			  profileresult :any[] = []; // empty array
+
+			  // using  formgroup formcontrol
+			  profiledetail = new FormGroup({// collection of the multiple FormControl
+				fname: new FormControl(''), // handle single input 
+				lname: new FormControl(''),
+				age : new FormControl(''),
+				adress : new FormGroup({ // nested formgroup & FormControl
+				  street: new FormControl(''),
+				  landmark: new FormControl(''),
+				  city: new FormControl(''),
+				  zipcode: new FormControl('')
+				})
+			  })
+       
+			  dis(){ // function to add data from the html side to empty array
+				this.profileresult.push(this.profiledetail.value);
+				this.profiledetail.reset();
+			  }
+
+			  // using FormBuilder
+			  // using this technique we can decalre the form as less world
+			  profilebuilder: any[] = [];
+			  private formbuilder = inject(FormBuilder); // inject first formbuilder
+			  profilebybuilder = this.formbuilder.group({ // access group as a formgroup
+				firstname:['',Validators.required], // apply validation here
+				lastname:[''], // in simple way declare FormControl but here this style is apply
+				adress: this.formbuilder.group({
+				  city:[''],
+				  zip:['']
+				}),
+				hobby : this.formbuilder.array([this.formbuilder.control('')]) // apply the formarray concept to add more or dynamic form
+			  })
+				
+				// function for the formbuilder form 
+			  disbybyuilder(){
+				this.profilebuilder.push(this.profilebybuilder.value);
+				this.profilebybuilder.reset(); // reset all form and form become empty
+				// console.log(this.profilebuilder.values.toString)
+			  }
+				
+				// get all hobby from the formbuilder form declarations by using formarray
+			  get hobby(){
+				return this.profilebybuilder.get('hobby') as FormArray;
+			  }
+				
+				// runtime we can add element in the form
+			  addhob(){
+				return this.hobby.push(this.formbuilder.control(''));
+			  }
+				
+				// Runtime we can remove the form element
+			  removehob(index : number){
+				return this.hobby.removeAt(index);
+			  }
+
+			  // form array directive
+			  //  Sujal = new FormArray([
+			  //   new FormControl('fish'),
+			  //   new FormControl('cat'),
+			  //   new FormControl('dog'),
+			  // ]);
+
+			  // form events
+			  // handle formEvents
+			  testing = new FormGroup({
+				test: new FormControl(''),
+			  })
+
+			  constructor(){
+				this.testing.events.subscribe((e)=>{// subscribe the formevents
+					if(e instanceof ValueChangeEvent){ // when form element value change then fire this
+					  console.log("Value Changed ", e.value)
+					}
+					if(e instanceof StatusChangeEvent){ // form status change then fired this
+					  console.log("Status Chnaged ",e.status)
+					}
+					if(e instanceof TouchedChangeEvent){ // touched untouched then fired this
+					  console.log("touch Untouch ",e.touched)
+					}
+
+				})
+			  }
+
+			  // Here is one complete, real Angular example showing ALL 4 utility functions
+			  
+			  form = new FormGroup({
+				name: new FormControl('Sujal'),
+				skills: new FormArray([
+				  new FormControl('Angular'),
+				  new FormControl('React'),
+				]),
+				settings: new FormRecord({
+				  theme: new FormControl('dark'),
+				  language: new FormControl('en')
+				})
+			  });
+
+			  inspect(con : AbstractControl){
+				if(isFormControl(con)){
+				  console.log("Array Form : ",con.value); // fetch all formcontrol value here
+				}
+				if(isFormArray(con)){
+				  console.log("Form array : ",con.length); // formarray value
+				}
+				if(isFormRecord(con)){
+				  console.log("Form record : ",Object.keys(con.controls)); // formrecord here
+				}
+			  }
+
+
+			  // type form
+			  // without using the nonNullable when form is reset then formcontrol became the null
+			  // but here using the nonNullable it's help to formcontrol for the reset not apply on this by using nonNullable
+			  login = new FormGroup({
+				// nonNullale Is help to not alllow to reset value in the form control
+				email : new FormControl('test@gmail.com',{nonNullable:true}),
+				psw: new FormControl(''),
+			  });
+
+
+			  username(){
+				const email = this.login.value.email;
+				this.login.reset();
+				console.log(email); // if the nonNullable is not available then value is become null but here it is so not null
+			  }
+
+			  explittype(){
+				const explititype = new FormControl<string | null>(null);
+				explititype.setValue("Explicit Type")
+				console.log(explititype.value);
+			  }
+			}
+		
+		reactiveforms.html :
+			<h1>Reactive Form :</h1>
+			<form [formGroup]="profiledetail" (ngSubmit)="dis()">
+			  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+				<div>
+				  <label for="">First Name : </label>
+				  <input type="text" placeholder="Fname" formControlName="fname"> // using formcontrol name put here
+				</div>
+				<div>
+				  <label for="">Last Name : </label>
+				  <input type="text" placeholder="Lname" formControlName="lname">
+				</div>
+				<div>
+				  <label for="">Age : </label>
+				  <input type="number" placeholder="Age" formControlName="age">
+				</div>
+
+				<h3>Adress :</h3>
+				<div formGroupName="adress" style="display: flex; flex-direction: column; gap: 20px;">
+				  <div>
+					<label for="">Street Name : </label>
+					<input type="text" placeholder="Street Name" formControlName="street">
+				  </div>
+				  <div>
+					<label for="">landmark : </label>
+					<input type="text" placeholder="Landmark" formControlName="landmark">
+				  </div>
+				  <div>
+					<label for="">City : </label>
+					<input type="text" placeholder="City Name" formControlName="city">
+				  </div>
+				  <div>
+					<label for="">Zipcode : </label>
+					<input type="number" placeholder="Zipcode" formControlName="zipcode" min="6">
+				  </div>
+				</div>
+
+				<div>
+				  <button type="submit" [disabled]="!profiledetail.valid">Save</button>
+				</div>
+
+			  </div>
+			</form>
+			
+			// fetch all value from the empty array
+			<ul *ngFor="let data of profileresult">
+			  <li>First Name : <strong>{{data.fname}}</strong></li>
+			  <li>Last Name : <strong>{{data.lname}}</strong></li>
+			  <li>Age : <strong>{{data.age}}</strong></li>
+			  <li>Street Name : <strong>{{data.adress.street}}</strong></li>
+			  <li>Landmark : <strong>{{data.adress.landmark}}</strong></li>
+			  <li>City : <strong>{{data.adress.city}}</strong></li>
+			  <li>ZipCode : <strong>{{data.adress.zipcode}}</strong></li>
+			</ul>
+
+			<hr>
+			
+			<h2>Using Form Builder :</h2>
+
+			<form [formGroup]="profilebybuilder" (ngSubmit)="disbybyuilder()">
+			  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+				<div>
+				  <label for="">First Name : </label>
+				  <input type="text" placeholder="Fname" formControlName="firstname">
+				</div>
+				<div>
+				  <label for="">Last Name : </label>
+				  <input type="text" placeholder="Lname" formControlName="lastname">
+				</div>
+
+				<h3>Adress :</h3> // apply here nested formgroup & formcontrol
+				<div formGroupName="adress" style="display: flex; flex-direction: column; gap: 20px;">
+				  <div>
+					<label for="">City : </label>
+					<input type="text" placeholder="City Name" formControlName="city">
+				  </div>
+				  <div>
+					<label for="">Zipcode : </label>
+					<input type="number" placeholder="Zipcode" formControlName="zip" min="6">
+				  </div>
+				</div>
+
+				<div>
+				  <button type="submit" [disabled]="!profilebybuilder.valid">Save</button>
+				</div>
+			  </div>
+
+
+			  <h4>Form Array :</h4> // apply here runtime add formelement
+			   <div  formArrayName="hobby" style="display: flex; flex-direction: column; gap: 10px;">
+				 @for(hob of hobby.controls; track $index; let h = $index){ // apply the for loop to hobby named formArray
+				   <div>//which type of we can add on the form that's add here style and html
+					 <label for="hob-{{h}}">Hobby {{h+1}}: </label>
+					 <input type="text" id="hob-{{h}}" [formControlName]="h">
+					 @if(h >= 1){
+					   <button (click)="removehob(h)">Delete</button>
+					  }
+					</div>
+				  }
+				  <button style="width: 10vw;" type="button" (click)="addhob()">Add Hobby</button>
+			   </div>
+
+
+
+			</form>
+
+			<div>
+			  <p>Form Status : {{profilebybuilder.status}}</p> // we know the form status
+			</div>
+
+			<ul *ngFor="let data of profilebuilder">
+			  <li>First Name : <strong>{{data.firstname}}</strong></li>
+			  <li>Last Name : <strong>{{data.lastname}}</strong></li>
+			  <li>City : <strong>{{data.adress.city}}</strong></li>
+			  <li>ZipCode : <strong>{{data.adress.zip}}</strong></li>
+			  <li>Hobbies:</li>
+			  <ul>
+				<li *ngFor="let hob of data.hobby">
+				  {{ hob }}
+				</li>
+			  </ul>
+			</ul>
+
+			<hr>
+			<!-- <h2>Using FormArrayDirective</h2>
+			   <form [formArrayName]="Sujal">
+				  @for (control of Sujal.controls; track $index) {
+					<input [formControlName]="$index">
+				  }
+				</form> -->
+			<hr>
+
+			<hr>
+				<h2>Form Events</h2> // for this test the event
+				<div [formGroup]="testing">
+				  <input type="text" placeholder="Testing Events" formControlName="test">
+				</div>
+			<hr>
+
+
+			<h2>Utility Functions Example(Events)</h2>
+
+			<p><strong>Name:</strong> {{ form.value.name }}</p>
+
+			<button (click)="inspect(form.get('name')!)">See Constrol</button>
+
+			<button (click)="inspect(form.get('skills')!)">See Form Array</button>
+			<button (click)="inspect(form.get('settings')!)">See Form Record</button>
+
+			<h3>Skills:</h3>
+			<ul>
+			  <li *ngFor="let s of form.value.skills">{{ s }}</li>
+			</ul>
+
+			<hr>
+
+			
+			<form [formGroup]="login" (ngSubmit)="username()">
+			  <div>
+				<label for="email">Email : </label>
+				<input type="text" id="email" formControlName="email">
+			  </div>
+			  <div>
+				<label for="psw">Password : </label>
+				<input type="text" id="psw" formControlName="psw">
+			  </div>
+			  <div>
+				<button type="submit">Save</button>
+			  </div>
+
+			</form>
+
+			<button (click)="explittype()">Explit Type</button>
+
+
+			<hr>
+
+
+			<div style="margin-top: 10px;">
+			<a [routerLink]="['']" style="text-decoration: none; border: 2px solid black; padding: 0.5%; color: white; background-color: red;">Back</a>
+			</div>
+
+
+○ Building a template-driven form :
+	- This tutorial shows you how to create a template-driven form. The control elements in the form are bound to data properties that have input validation. The input validation helps maintain data integrity and styling to improve the user experience.
+	
+	Template vs Reactive forms
+		Angular supports two design approaches for interactive forms. Template-driven forms allow you to use form-specific directives in your Angular template. Reactive forms provide a model-driven approach to building forms.
+
+		Template-driven forms are a great choice for small or simple forms, while reactive forms are more scalable and suitable for complex forms. For a comparison of the two approaches, see Choosing an approach
+						
+		Ex.
+			Templateform.ts :
+				import { JsonPipe } from '@angular/common';
+				import { Component } from '@angular/core';
+				import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+				import { RouterLink } from '@angular/router';
+
+
+				// this is the schema of the template form
+				// make for the reset front side or back side value in the ts or html file
+				export class Actor {
+				  constructor(public email: string, public psw: string, public skills: string) {}
+				}
+
+				@Component({
+				  selector: 'app-templateform',
+				  imports: [RouterLink, FormsModule, JsonPipe],
+				  templateUrl: './templateform.html',
+				  styleUrl: './templateform.css',
+				})
+				export class Templateform {
+				  fname = ''; // for this single input
+
+				  // Sample Template Form
+				  // for this multiple inputs
+				  user = {
+					email: '',
+					psw: '',
+					skills: '',
+				  };
+
+				  skill = ['Dance', 'Swim', 'Lead', 'Communicate', 'Other'];
+					
+					// this a fired when the form is submitted
+				  submit(form: any) {
+					console.log(form.value);
+				  }
+
+				  // this is the reset form from the front and to backend side
+				  // when this fired that time html or ts side data is become null
+				  model = new Actor('','','');
+				  ResetForm(){
+					this.model = new Actor('','','');
+				  }
+					// html side responce which like form is submitted 
+				  // responce form submission
+				  sumitted = false;
+				  reposnce(){
+					console.log('submitted !')
+					this.sumitted = true;
+				  }
+					// for this toggle value of the submitted true or false
+				  submittoggle(){
+					this.sumitted = !this.sumitted;
+				  }
+				}
+			
+			Templateform.html :
+				<h1>Template Form :</h1>
+				<h2>Simple Template Form :</h2>
+				First Name : <input type="text" [(ngModel)]="fname" ] /> // put the fname in ths ngModel for the hadle input
+				<p>{{ fname }}</p>
+				<hr />
+
+				<h3>Sample Template Form :</h3> 
+				<h4>Apply Class On Required & Error Message Display</h4>
+				<!-- NgForm → creates a FormGroup
+					NgModel → creates FormControls -->
+				<div>
+
+				<form #sujalform="ngForm" (ngSubmit)="submit(sujalform)">
+				  <div class="d-flex flex-column">
+					<div>
+					  <label for="email">Email : </label>
+					  <input
+						type="text"
+						[(ngModel)]="user.email"
+						id="email"
+						class="form-control"
+						name="email"
+						required
+						#email="ngModel" // for the show error 
+					  />
+					  // here div is hidden when the #email is valid 
+					  <div [hidden]="email.valid || email.pristine" class="alert">
+						<p>Email Required !</p>
+					  </div>
+					</div>
+
+					<div>
+					  <label for="psq">Password : </label>
+					  <input
+						type="text"
+						[(ngModel)]="user.psw"
+						name="psw"
+						class="form-control"
+						required
+						#psq="ngModel" // same here password
+					  />
+					  <span [hidden]="psq.valid || psq.pristine">
+						<p class="alert alert-danger">Password Is Requried !</p>
+					  </span>
+					</div>
+
+					<div class="mt-3">
+					  <label for="">Skill : </label>
+					  <select id="" class="form-select" [(ngModel)]="user.skills" name="skills" required>
+						<option value="">Select Skill</option>
+						@for (item of skill; track $index) {
+						<option value="{{ item }}">{{ item }}</option>
+						}
+					  </select>
+					</div>
+					<div class="m-4">
+					  <button type="submit" class="btn btn-success">Save</button>
+					  <button (click)="ResetForm(); sujalform.reset()" class="btn btn-primary ml-2">Reset</button>
+					</div>
+				  </div>
+				</form>
+				</div>
+
+				<p>{{ user | json }}</p>
+
+				<hr />
+				<h2>Form Submitted Responce : </h2>
+				
+				// here apply the form submitted condition if form is submited then fedback is seen.
+				<div [hidden]="sumitted">
+				  <form (ngSubmit)="reposnce()">
+					<div class="d-flex flex-column">
+					  <label for="test">Form Submitted ? Click Button</label>
+					  <button class="btn btn-success w-25">Check !</button>
+					</div>
+				  </form>
+				</div>
+
+				  @if (sumitted) {
+					<p class="alert alert-success">Form Submitted SuccessFully !</p>
+				  }
+
+				@if (sumitted) {
+				  <button class="btn btn-dnager" (click)="submittoggle()" >Toggle Form Submission</button>
+				}
+
+				<hr>
+				<div style="margin-top: 10px" class="btn btn-danger w-100">
+				  <a [routerLink]="['']" class="text-white">Back</a>
+				</div>
+				
+○ Validating form input :
+	- You can improve overall data quality by validating user input for accuracy and completeness. This page shows how to validate user input from the UI and display useful validation messages, in both reactive and template-driven forms.
+	
+	○ Validating input in template-driven forms :
+			Validator functions can be either synchronous or asynchronous.
+
+			Validator type	
+				○ Sync validators	: Synchronous functions that take a control instance and immediately return either a set of validation errors or null. Pass these in as the second argument when you instantiate a FormControl.
+
+				○ Async validators	: Asynchronous functions that take a control instance and return a Promise or Observable that later emits a set of validation errors or null. Pass these in as the third argument when you instantiate a FormControl.
+				
+	○ Built-in validator functions :
+		- by using the validator.required minlength email etc it's a provided by the angular so we can use direct into the angular app.
+		- main thing is use validator property.
+		
+	○ Defining custom validators :
+		- The built-in validators don't always match the exact use case of your application, so you sometimes need to create a custom validator.
+		- here we can make the own custom validator.
+		
+		Adding cross-validation to template-driven forms..........
+
+		
+								
+				
+
+			
+		
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
