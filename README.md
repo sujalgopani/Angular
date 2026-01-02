@@ -6084,4 +6084,7 @@ Signal : used like a store or set or update value
 			When using RouterModule.forRoot, this is configured with the useHash: true in the second argument: RouterModule.forRoot(routes, {useHash: true}).
 		
 	○ Route transition animations :
-		- 
+		- In this topic when we perform the routing that time apply the animation like fade in and fade out etc that's called the Route transition animation
+	
+	
+		
