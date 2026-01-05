@@ -6729,9 +6729,469 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 	○ Defining custom validators :
 		- The built-in validators don't always match the exact use case of your application, so you sometimes need to create a custom validator.
 		- here we can make the own custom validator.
+		- when we want to apply own ideal validation in the form the we use the custom validation concept by usoing ValidatorFn.
 		
-		Adding cross-validation to template-driven forms..........
+		Ex.
+			first we make the one function which is apply on the form and all custom login is written in this function.
+			
+			unambiguousRoleValidator function :
+				export function forbiddenAdminValidator(testdata: string[]): ValidatorFn { //ValidatorFn is use for custom logic buiding
+				  return (control: AbstractControl): ValidationErrors | null => { // AbstractControl is the base class for all Angular form controls.
+					if (!control.value) {
+					  return null;
+					}
+					const value = control.value;
+					const isForbidden = testdata.map((user) => user.toLowerCase()).includes(value);
+					return isForbidden ? { forbiddenAdmin: true } : null;
+				  };
+				}
+				
+			in the ts file :
+				  blockedUsers = ['admin', 'superadmin', 'root'];
 
+					 userform = new FormGroup({
+						fname: new FormControl(this.user.fname, [
+						  Validators.required,
+						  Validators.minLength(3),
+						  forbiddenAdminValidator(this.blockedUsers), // custom function is apply here
+						])
+					  });
+					  
+					 get fname(){ // this is return the current value of the fname
+						return this.userform.get('fname')
+					  }
+					  
+			html file :
+								
+				<form [formGroup]="userform">
+				  <label for="fname">Check Error :</label>
+				  <input type="text" id="fname" class="form-control" formControlName="fname" />
+
+				  @if (fname?.invalid && (fname?.dirty || fname?.touched)) {
+				  <div class="text-danger">
+				  // here error declare if required related validation fire then show this message 
+					@if (fname?.hasError('required')) {
+					<div>Name is required</div>
+					} @if (fname?.hasError('minlength')) {
+					<div>Minimum length is 3</div>
+					} @if (fname?.hasError('forbiddenAdmin')) { // if forbiddenAdmin validation is fired then this div is shown
+					<div>This name is not allowed</div>
+					}
+				  </div>
+				  }
+				</form>
+				<hr />
+			
+	○ Adding custom validators to template-driven forms :
+		- in this concept all things are same login are same and way of apply is same but some changes are apply here and we make the custom validation and apply on the template form.
+		
+		Ex.
+			first of the we make the Directive and export the class
+				
+				@Directive({
+				  selector:'[appnotallowword]', // Direct Name
+				  providers:[{
+					provide:NG_VALIDATORS, // provide
+					useExisting:unwanteddetect, // use this class
+					multi:true
+				  }]
+				})
+
+				
+				// make the class and impletemeted Validator
+				export class unwanteddetect implements Validator{
+
+				  // custom validation
+				  @Input('appnotallowword') blocklist:string[]=[];
+					
+				  validate(control: AbstractControl): ValidationErrors | null {
+					if(!control.value)return null;
+					const val =control.value.toLowerCase()
+					const isworld = this.blocklist.map(user=>user.toLowerCase()).includes(val);
+					return isworld ? {isdeitect:true}:null;
+				  }
+				} // logic are same but some chages we make here.
+				
+			import this Directive in the componanent file :
+				  imports: [FormsModule,unwanteddetect],
+			
+					export class Validationinputs {
+					  user = { fname: '' };
+					  blockuser = ['sujal','block','admin'];
+					}
+					
+			html file :
+				<h2>Custom Validation Template Form :</h2>
+
+				<form #customform="ngForm">
+				  <label for="fname">Custom Error :</label>
+				  <input
+				  type="text"
+				  id="fname"
+				  name="fname"
+				  class="form-control"
+				  required
+				  [(ngModel)]="user.fname"
+				  
+				  // apply here custom validation and give the value blockuser
+				  [appnotallowword]="blockuser"
+				  #worldcollec = "ngModel"> // reference of the input element
+
+					// check here input touched invalid dirty like
+				  @if (worldcollec.invalid && (worldcollec.touched || worldcollec.dirty)) {
+					<div>
+					  @if (worldcollec.hasError('required')) {
+						<div>Name Is Required !</div>
+					  }
+					  // if the custom error detect here so show the message
+					  @if(worldcollec.hasError('isdeitect')){
+						<div>Name Is Not Allowed !</div>
+					  }
+					</div>
+				  }
+				</form>
+
+
+	
+		○ Control status CSS classes :
+			✅ 1. Validation State
+				1).ng-valid
+				✔ Control passes all validations
+
+				.ng-valid {
+				  border: 2px solid green;
+				}
+
+				2).ng-invalid
+				❌ Control fails any validation
+				
+				.ng-invalid {
+				  border: 2px solid red;
+				}
+
+				3).ng-pending
+				⏳ Validation is running (mostly async validators)
+
+				.ng-pending {
+				  border: 2px solid orange;
+				}
+
+			✅ 2. Value Change State
+				1).ng-pristine
+
+				🆕 User has NOT changed the value yet
+				.ng-pristine {
+				  background-color: #f9f9f9;
+				}
+
+				2).ng-dirty
+				✍ User HAS changed the value
+
+				.ng-dirty {
+				  background-color: #fff;
+				}
+
+			✅ 3. Interaction State
+				1).ng-untouched
+				🖱 Control never focused
+
+				2).ng-touched
+				👆 Control focused and blurred
+
+				.ng-touched.ng-invalid {
+				  border-color: red;
+				}
+
+
+			✔ Most common real-world usage
+
+			✅ 4. Form-Level Class
+				1).ng-submitted
+
+				📤 Applied ONLY on <form>
+				✔ When form is submitted
+
+				form.ng-submitted input.ng-invalid {
+				  border: 2px solid red;
+				}
+
+			🧠 Real-World Best Practice Styling
+				🔥 Recommended Pattern
+				input.ng-touched.ng-invalid {
+				  border: 2px solid #dc3545;
+				}
+
+				input.ng-touched.ng-valid {
+				  border: 2px solid #28a745;
+				}
+				
+		○ Cross-field validation :
+			- A cross-field validator is a custom validator that compares the values of different fields in a form and accepts or rejects them in combination. For example, you might have a form that offers mutually incompatible options, so that if the user can choose A or B, but not both. Some field values might also depend on others; a user might be allowed to choose B only if A is also chosen.
+			- in this concept we validate more than 1 input field, like username and passwrod is not same, or fname & lname is not same etcc.
+			- here we make the fname and lname is not a same logic apply here.
+			
+			
+				1) Adding cross-validation to reactive forms :
+					- cross validation is apply one reactive form :
+						Ex.
+							first we make the const for the cross validation.
+								export const testing:ValidatorFn=(constrol:AbstractControl,):ValidationErrors|null=>{
+								  const fname = constrol.get('fname');
+								  const lname = constrol.get('lname');
+								  return fname && lname && fname.value === lname.value ? {ismatch:true} : null;
+								}
+							
+							ts file :
+								export class Validationinputreactive {
+								  crossfieldvalidation = new FormGroup(
+									{
+									  fname: new FormControl(""),
+									  lname: new FormControl(""),
+									},
+									{ validators: testing }
+								  );
+								}
+							
+							html File :
+								<form [formGroup]="crossfieldvalidation">
+								  <h4>Check Cross Validation Field(Fname & Lname Not Same) :</h4>
+								  <div>
+									<label for="fname">Fname : </label>
+									<input id="fnmae" name="lname" class="form-control" formControlName="fname" />
+								  </div>
+								  <div>
+									<label for="lname">Lname : </label>
+									<input id="lname" name="lname" class="form-control" formControlName="lname" />
+								  </div>
+								</form>
+								// apply all full form
+								@if (crossfieldvalidation.hasError('ismatch') && (crossfieldvalidation.dirty && crossfieldvalidation.touched)) {
+								  <div >
+									Name cannot match role or audiences will be confused.
+								  </div>
+								}
+								
+				2) Adding cross-validation to template-driven forms :
+					Ex.
+						@Directive({
+						  selector:'[appnamesame]', // directive name
+						  standalone:true,
+						  providers:[{
+							provide:NG_VALIDATORS,
+							useExisting:crossvalidation,
+							multi:true
+						  }]
+						})
+
+
+						export class crossvalidation implements Validator{
+						  validate(control: AbstractControl): ValidationErrors | null {
+							const fname = control.get('fname'); // get the fname input field
+							const lname = control.get('lname'); // get the lname input field
+
+							if(!fname && !lname) return null;
+							
+							// if the fname & lname are same then return true ad throw erro message
+							return fname?.value === lname?.value ? {iscross:true} : null; 
+						  }
+						}
+					
+					ts file :
+						  imports: [FormsModule,crossvalidation],
+											 
+							export class Validationinputs {
+							  // cross validation
+							  crossvalid = {fname:'',lname:''}
+							}
+						
+					html file :
+						<h2>Cross Validation in Template Form :</h2>
+						// Directive name write here
+						<form #crossform="ngForm" appnamesame>
+						  <div>
+							<label for="fname" class="from-label">First Name : </label>
+							<input
+							type="text"
+							id="fname"
+							name="fname"
+							required
+							[(ngModel)]="crossvalid.fname"
+							class="form-control"
+							#fname="ngModel" // reference name
+							>
+						  </div>
+						  <div>
+							<label for="lname" class="from-label">Last Name : </label>
+							<input
+							type="text"
+							id="lname"
+							name="lname"
+							required
+							[(ngModel)]="crossvalid.lname"
+							class="form-control"
+							#lname="ngModel" // referece name
+							>
+						  </div>
+						</form>
+						// apply cross validation full of form
+						// here if the iscross named error is true then show message
+						@if (crossform.hasError('iscross') && (fname.touched || lname.touched)) {
+						  <div class="text-danger">
+							First & Last Name Is Same !
+						  </div>
+						}
+						
+			
+	○ Creating asynchronous validators :
+		🧠 Difference: Sync vs Async Validator
+			Sync Validator					Async Validator
+			Runs immediately				Runs asynchronously
+			Returns ValidationErrors | null	Returns Promise or Observable
+			No server calls					Often API calls
+			Instant							Takes time
+			Status = VALID / INVALID		Status = PENDING first
+		
+		
+		○ Implementing a custom async validator :
+			○ Reactive Form :(by using AsyncValidator)
+				ts file :
+				
+					- @Injectable({providedIn:'root'})
+						export class blockusers implements AsyncValidator{
+						  validate(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
+							return new Promise(res=>{
+							  setTimeout(() => {
+								if(control.value === "sujal"){res({adminBlocked:true})}
+								else {res(null)}
+							  }, 500)
+							})
+						  }
+						}
+						
+						export class Validationinputreactive {
+						  block = inject(blockusers);
+						  username = new FormControl('',[],[this.block.validate.bind(this.block)]   // async validator(basic)
+						}
+
+				html file :
+					<h2>Creating asynchronous validators : </h2>
+					 <input [formControl]="username" placeholder="Username" />
+
+					@if (username.pending) {
+					  <div>Checking...</div>
+					}
+
+					@if (username.hasError('adminBlocked')) {
+					  <div>Username "admin" is not allowed</div>
+					}
+			
+			○ Template Form :
+				Directive File :	
+					@Directive({
+					  selector:'[asynvalid]',
+					  standalone:true,
+					  providers:[
+						{
+						  provide:NG_ASYNC_VALIDATORS, // use must be like this
+						  useExisting:Blockuserdetect,
+						  multi:true
+						}]
+					})
+
+					export class Blockuserdetect implements AsyncValidator{ // implements like this
+					  validate(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
+						return of(control.value).pipe(
+						  delay(1000),
+						  map(val=>val=== 'admin'? {adminBlocked:true}:null)
+						);
+					  }
+					}
+						
+			○ Componet File :
+			
+				imports: [FormsModule,RouterLink,Blockuserdetect]// import first
+				export class Validationinputs {
+				  // async validation
+				  asyncvalid = {username:''}
+				}
+			
+			○ html file :
+				<hr>
+				<div>
+				  <h2>Async Validatio Form : </h2>
+				  <form #asyncf="ngForm">
+					<input
+					type="text"
+					[(ngModel)]="asyncvalid.username"
+					asynvalid // calling directive
+					required
+					id="username"
+					name="username"
+					#username="ngModel" // reference
+					>
+
+				  </form>
+				   @if (username.pending) { // if the pending then message show 
+					<div>Checking...</div>
+				  }
+				  @if (username.hasError('adminBlocked')) { // if the error occur then messageshow
+					<div>Username "admin" is not allowed</div>
+				  }
+				</div>
+		
+		○ [ngModelOptions]="{updateOn:'change'}" :
+			- it's most usefull feature of the asyncvalidation apply on the input element.
+			○ The Problem :
+				1.By default, Angular runs all validators after every value change.
+				2.For sync validators (like required or pattern) → no problem, fast.
+				3.For async validators (like checking username availability via HTTP) → huge performance cost:
+				4.Sends a request on every keystroke
+				5.Backend could be overloaded
+				6.User sees flickering “checking…” messages
+				
+			🔹 The Solution: updateOn
+				Angular allows us to control when a validator runs using updateOn.
+
+				3 Options
+				Value		Meaning
+				'change'	Default → run on every keystroke
+				'blur'		Run only when user leaves the input (recommended for async validators)
+				'submit'	Run only when form is submitted
+				
+				Ex.
+					<form #asyncf="ngForm">
+						<label for="username">Username : </label>
+						<input
+						type="text"
+						[(ngModel)]="asyncvalid.username"
+						asynitem
+						required
+						id="username"
+						name="username"
+						#username="ngModel"
+						class="form-control"
+						[ngModelOptions]="{updateOn:'change & blur & submit'}"
+						>
+					  </form>
+					   @if (username.pending) {
+						<div>Checking...</div>
+					  }
+					  @if (username.hasError('adminBlocked')) {
+						<div>Username "admin" is not allowed</div>
+					  }
+					  
+○ Building dynamic forms :
+	- 
+
+			
+
+						
+						
+
+
+
+
+		
 		
 								
 				
