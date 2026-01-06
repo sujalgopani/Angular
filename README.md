@@ -7181,8 +7181,240 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 					  }
 					  
 ○ Building dynamic forms :
-	- 
+	- dynamic form is the createdby the one declared model structure and apply only little bit code in the html.
+	- main work are handle by the model structure.
+	- in simple making html form when we want to change the some specific elements then change whole html code but here make one model and change model structure and automatically change the html code.
+	- so fastest way to declare the html form in angular.
+	 Ex.
+		(first of all make basic form )
+		dynamicformmodel.ts :
+			// form structure and apply on html page
+			export interface sujalquestion {
+			  key: string;
+			  label: string;
+			  type: 'text' | 'email' | 'number';
+			  required: boolean;
+			}
+		
+		Dynamicforms.ts :
+			import { Component, OnInit } from '@angular/core';
+			import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+			import { question, selfmade, sujalquestion } from './dynamicmodel';
+			import { CommonModule, JsonPipe } from '@angular/common';
 
+			@Component({
+			  selector: 'app-dynamicforms',
+			  imports: [ReactiveFormsModule, CommonModule],
+			  templateUrl: './dynamicforms.html',
+			  styleUrl: './dynamicforms.css',
+			})
+			
+			export class Dynamicforms implements OnInit {
+			  sujalform!: FormGroup; // full form
+			  // all declared html attribute data
+			  sujalqu: sujalquestion[] = [
+				{ key: 'name', label: 'Full Name', type: 'text', required: true },
+				{ key: 'email', label: 'Email Address', type: 'email', required: true },
+				{ key: 'experience', label: 'Experience (Years)', type: 'number', required: false },
+			  ];
+			  
+			  ngOnInit(): void {
+				const group2: any = {}; // temp variable fro consume form data
+
+				this.selfmadeData.forEach((res) => {
+				// insert the data in the group
+				  group2[res.key] = new FormControl('', res.required ? Validators.required : []);
+				});
+				this.selfmadeForm = new FormGroup(group2);
+			  }
+			  
+			  submit2() {
+				console.log(this.selfmadeForm.value);
+			  }
+			}
+			
+		html form :
+			<h3>Self Made Dynamic Form :</h3>
+
+			<div>
+			  <form [formGroup]="selfmadeForm" (ngSubmit)="submit2()" class="border border-secondary p-3 w-50 mx-auto d-block">
+			  // looping in the sujalqu
+				@for (i of selfmadeData; track i.key) { @if (i.type == 'text') {
+				<label for="{{ i.key }}">{{ i.label }}</label>
+				<input type="text" id="{{ i.key }}" class="form-control" [formControlName]="i.key" />
+				} @if (i.type == 'number') {
+				<label for="{{ i.key }}">{{ i.label }}</label>
+				<input type="number" id="{{ i.key }}" class="form-control" [formControlName]="i.key" />
+				} @if (i.type == 'select') {
+				<div>
+				  <label for="">{{i.label}}</label>
+				  <select class="form-control" [formControlName]="i.key">
+					@for (s of i.selectdata; track s.skey) {
+					<option value="{{ s.svalue }}">{{ s.svalue }}</option>
+					}
+				  </select>
+				</div>
+				} }
+
+				<button type="submit" class="btn btn-success mx-auto d-block mt-2">Save</button>
+			  </form>
+			</div>
+			
+			(advanced example) written in the git hub links
+
+○ Understanding communicating with backend services using HTTP : 
+	🌐 Communicating with backend services using HTTP (Angular)
+
+		Most front-end applications need to talk to a server to:
+			fetch data (GET)
+			send data (POST)
+			update data (PUT/PATCH)
+			delete data (DELETE)
+			Angular does this using the HttpClient service from
+			@angular/common/http.
+				
+	○ Setting up HttpClient :
+		| Option                        | Simple meaning                |
+		| ----------------------------- | ----------------------------- |
+		| `withFetch()`                 | Modern fetch API use karo     |
+		| `withInterceptors()`          | Custom interceptors add karo  |
+		| `withInterceptorsFromDi()`    | DI wale interceptors use karo |
+		| `withRequestsMadeViaParent()` | Parent HttpClient use karo    |
+		| `withJsonpSupport()`          | Old JSONP support             |
+		| `withXsrfConfiguration()`     | Security enable               |
+		| `withNoXsrfProtection()`      | Security disable              |
+	
+	○ Httpclient module based configuration : (Ols(NgModule-based HttpClient) replaced new(provideHttpClient()) )
+		| Old NgModule                         | New provideHttpClient                         |
+		| ------------------------------------ | --------------------------------------------- |
+		| `HttpClientModule`                   | `provideHttpClient(withInterceptorsFromDi())` |
+		| `HttpClientJsonpModule`              | `withJsonpSupport()`                          |
+		| `HttpClientXsrfModule.withOptions()` | `withXsrfConfiguration()`                     |
+		| `HttpClientXsrfModule.disable()`     | `withNoXsrfProtection()`                      |
+
+	
+	○ Making HTTP requests :
+		- by inject HttpClient or provideHttpClient() are used to fetching data or making http request.
+		- in the service file we can only hit get,post,put,delete etc request, but componanent file we can subscribe this requesrt without subscribe not hiting the request in the background.
+		
+		Fetching JSON data :
+			
+			Ex.
+				usersevice.ts : (service file):
+					import { HttpClient } from '@angular/common/http';
+					import { inject, Injectable } from '@angular/core';
+					import { Observable } from 'rxjs';
+
+					@Injectable({ providedIn: 'root' })
+					export class userservice {
+					  constructor(private http: HttpClient) {}
+
+					  private apiUrl = 'https://jsonplaceholder.typicode.com/users';
+
+					  getUsers(): Observable<any> {
+						return this.http.get(this.apiUrl);
+					  }
+					}
+				
+				componanent file :
+					export class Httpreq {
+					  constructor(private usersService: userservice) { // inject via constructor userservice
+						// DI happens here 👈
+					  }
+					   loadUsers() {
+						this.usersService.getUsers().subscribe(data => { // subscribe must be here
+						  console.log('Users from API:', data); // console  the data
+						});
+					  }
+					}
+					
+				html file :
+					<button (click)="loadUsers()">Load Users</button>
+		
+	○ Fetching other types of data :
+		- 	responseType value	Returned response type
+			'json' (default)	JSON data of the given generic type (by default responce)
+			'text'				string data (as a text)
+			'arraybuffer'		ArrayBuffer containing the raw response bytes(as a binary for sharing video image data etc..)
+			'blob'				Blob instance
+		Ex.
+			@Injectable({ providedIn: 'root' })
+				export class userservice {
+				  constructor(private http: HttpClient) {}
+
+				  private apiUrl = 'https://jsonplaceholder.typicode.com/users';
+
+				  getUsers(): Observable<any> {
+					return this.http.get(this.apiUrl,{responseType:'json(default) & blob & arraybuffer & text'});
+				  }
+				}
+				
+	○ Setting URL parameters :
+		- in the api url if the paramaeter is available then get it and responce based on this paramaeter.
+		- as get the data by id wise filter data for brand name wise etc all is happen by paramaeter.
+		
+		Ex.
+			userservice.ts :
+				import { HttpClient } from '@angular/common/http';
+				import { inject, Injectable } from '@angular/core';
+				import { Observable } from 'rxjs';
+
+				@Injectable({ providedIn: 'root' })
+				export class userservice {
+				  constructor(private http: HttpClient) {}
+
+				  private apiUrl = 'https://jsonplaceholder.typicode.com/users';
+
+				  getUsers(sid : number): Observable<any> {
+				  // give the paramaeter to the api url
+					return this.http.get(this.apiUrl,{params:{id:sid}});
+				  }
+				}
+				
+			componanent.ts :
+				import { Component, numberAttribute } from '@angular/core';
+				import { userservice } from '../configservice';
+				import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+				@Component({
+				  selector: 'app-httpreq',
+				  imports: [ReactiveFormsModule],
+				  templateUrl: './httpreq.html',
+				  styleUrl: './httpreq.css',
+				})
+
+				export class Httpreq {
+				  constructor(private usersService: userservice) {}
+				  apiform= new FormGroup({
+					ids :new FormControl('')
+				  })
+				   loadUsers() {
+				   // get the id from the api url.
+					const id = Number(this.apiform.get('ids')?.value);
+					this.usersService.getUsers(id).subscribe(data => { // subscribe the api 
+					  if(data.length ===0){
+						console.log(404)
+					  }else
+					  console.log('Users from API:', data);
+					});
+				  }
+				}
+				
+				html file :
+					<p>httpreq works!</p> 
+						<form [formGroup]="apiform" (ngSubmit)="loadUsers()"> // form for fetching the data by it's id
+						  <input type="text" formControlName="ids">
+						  <button type="submit">Load Users</button>
+						</form>
+
+
+
+		
+
+			
+
+					
+Custom parameter encoding
 			
 
 						
