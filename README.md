@@ -7406,16 +7406,495 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 						  <input type="text" formControlName="ids">
 						  <button type="submit">Load Users</button>
 						</form>
+											
+	○ Custom parameter encoding :
+		- Angular uses HttpUrlEncodingCodec to encode query params.
+		- when we pass the url query then it's passed as a encode suppose when we pass test+200@gmail.com then it's passed the test%2B200%40gmail.com.
+		- it's implement by the HttpParameterCodec.
+		- it's decode as a :
+				+   → %2B
+				@   → %40
+				&   → %26
+				?   → %3F
+				/   → %2F
+				=   → %3D
+				
+		Ex.
+			make customencoding named file :
+				// custom-http-param-encoder.ts
+				import { HttpParameterCodec } from '@angular/common/http';
 
-
-
-		
-
+				export class CustomHttpParamEncoder implements HttpParameterCodec {
+				  encodeKey(key: string): string {
+					// encode key using JS standard
+					return encodeURIComponent(key); must be return encodeURIComponent
+				  }
+				  encodeValue(value: string): string {
+					// encode value using JS standard
+					return encodeURIComponent(value);
+				  }
+				  decodeKey(key: string): string {
+					return decodeURIComponent(key);
+				  }
+				  decodeValue(value: string): string {
+					return decodeURIComponent(value);
+				  }
+				}
+			]
 			
+			○ Userservice.ts :
+				
+				import { HttpClient, HttpParams } from '@angular/common/http';
+				import { Injectable } from '@angular/core';
+				import { Observable } from 'rxjs';
+				import { customencoding } from './customencodinghttps';
 
+				@Injectable({ providedIn: 'root' })
+				export class userservice {
+				  constructor(private http: HttpClient) {}
+				  private api = 'https://jsonplaceholder.typicode.com/users';
+
+				  checkencode(email:any){
+					const params = new HttpParams({encoder: new customencoding()})
+					.set(`email`,email);
+					return this.http.get('https://httpbin.org/get',{params});
+				  }
+
+
+				  getbyemailEncoded(email:any) {
+					const params = new HttpParams({ encoder: new customencoding() })
+					.set(`email`,email);
+					return this.http.get('https://jsonplaceholder.typicode.com/users', { params }).subscribe(console.log);
+				  }
+				}
+				
+				Httpreq.ts :
+					import { Component, numberAttribute } from '@angular/core';
+					import { userservice } from '../configservice';
+					import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+					import { domainToASCII } from 'url';
+
+					@Component({
+					  selector: 'app-httpreq',
+					  imports: [ReactiveFormsModule],
+					  templateUrl: './httpreq.html',
+					  styleUrl: './httpreq.css',
+					})
+					export class Httpreq {
+					  constructor(private userservice: userservice) {}
+
+					  // for testing and see encoded email or any string
+					  encodeform= new FormGroup({
+						encodeinput :new FormControl('')
+					  })
+
+							// PASSED : SUJAL GOPANI+2005 @GMAIL.COM
+							// ANGULAR CONSIDER : SUJAL GOPANI%2B2005 %40GMAIL.COM
+					  demoencode(){
+						this.userservice.checkencode(this.encodeform.get('encodeinput')?.value).subscribe(data=>{
+						  console.log(data);
+						})
+					  }
+
+					  // fetch json by encode form email
+					  getbyemail(){
+						this.userservice.getbyemailEncoded(this.encodeform.get('encodeinput')?.value);
+						// .subscribe(data=>{
+						//   console.log(data)
+						// })
+					  }
+					}
 					
-Custom parameter encoding
+					Httpreq.html :
+						<h4>Check The How The Original Value Angular Can Encode :</h4>
+						<form [formGroup]="encodeform">
+						  <label for="email">Enter Original Email : </label>
+						  <input type="text" id="email" name="email" class="form-control" formControlName="encodeinput">
+						  <button (click)="demoencode()">Click And See Encoded Email</button>
+						</form>
+						<hr>
+
+						<h4>Fetch Json By Email Parameter Encode Form :</h4>
+						<form [formGroup]="encodeform">
+						  <label for="email">Enter Original Email : </label>
+						  <input type="text" id="email" name="email" class="form-control" formControlName="encodeinput">
+
+						  <button (click)="getbyemail()">Email Encoded</button>
+						</form>
+						
+			○ Setting request headers :
+				- if we want to send the meta data with the api responce then we use the header during the getting the api.
+				- metadata is the immutable so it's not change if once time is created.
+				- header is the send as a key : value pair.
+				- header is visible in the browser in Network tab under header section.
+				
+				Ex.
+					userservice.ts :
+						getbyemailEncoded(email:any) {
+							// declare the header with key : value pair
+							const headers = {
+							  'Made-By':'Sujal-Gopani'
+							};
+							const params = new HttpParams({ encoder: new customencoding() })
+							.set(`email`,email);
+							// here passed the header with params
+							// that's it
+							return this.http.get('https://jsonplaceholder.typicode.com/users',{ params,headers }).subscribe(console.log);
+						  }
+						  
+			○ Interacting with the server response events :
+				- For convenience, HttpClient by default returns an Observable of the data returned by the server (the response body). Occasionally it's desirable to examine the actual response, for example to retrieve specific response headers.
+				- some of the case server response as a api result as json format but in this topic give the metadata like api status, headers, body etc...
+				
+				Ex.
+					userservice.ts :
+						getserverresponceevent(){
+							const headers ={
+							  'Sujal':'Angular'
+							}
+							// simply here declare the observe:'response'
+							return this.http.get('https://jsonplaceholder.typicode.com/users?email=Sincere@april.biz',{headers,observe:'response'});
+						  }
+					
+					httpreq.ts :						
+					  getserverresponse(){
+					  // so here we know the status code, body header etc..
+						return this.userservice.getserverresponceevent().subscribe(data=>{
+						  console.log(data.status);
+						  console.log(data.body);
+						  console.log(data.headers);
+						})
+					  }
+					  // in the html when button click by this event that time server response with status body headers etc...
+					  
 			
+			○ Receiving raw progress events :
+				- Normally, when you use HttpClient, you only get one thing back:
+					the final response (data from the server)
+				- But Angular can also give you events during the request lifecycle, such as:
+					when the request is sent
+					upload progress
+					download progress
+					when headers arrive
+					when the response is fully completed
+				These are called raw HTTP events.
+				
+				type value						Event meaning
+				HttpEventType.Sent				The request has been dispatched to the server
+				HttpEventType.UploadProgress	An HttpUploadProgressEvent reporting progress on uploading the request body
+				HttpEventType.ResponseHeader	The head of the response has been received, including status and headers
+				HttpEventType.DownloadProgress	An HttpDownloadProgressEvent reporting progress on downloading the response body
+				
+				HttpEventType.Response			The entire response has been received, including the response body
+				HttpEventType.User				A custom event from an Http interceptor.
+			
+				- that is the return real time uploading or downloading progress data.
+				
+				Ex.
+					userservice.ts :
+						import { HttpClient, HttpEvent } from '@angular/common/http';
+						import { Injectable } from '@angular/core';
+						import { Observable } from 'rxjs';
+
+						@Injectable({ providedIn: 'root' })
+						export class userservice {
+						  constructor(private http: HttpClient) {}
+							
+							// here hit the post request to fake api for the upload document or any file
+						  uploadFile(file :File):Observable<HttpEvent<any>>{
+							// consume temporary file data
+							const formdata = new FormData();
+							formdata.append('file',file);
+							const uploadapi  = 'https://api.escuelajs.co/api/v1/files/upload';
+							
+							// post request with api and file data
+							return this.http.post(uploadapi,formdata,{
+							  reportProgress:true, // reportProgress true it's help to handle real time uploading proccess
+							  observe:'events' as const
+							})
+						  }
+
+						}
+				
+					Httpreq.ts : (Component)
+						import { Component } from '@angular/core';
+						import { userservice } from '../configservice';
+						import { ReactiveFormsModule } from '@angular/forms';
+						import { HttpEventType } from '@angular/common/http';
+						import { CommonModule } from '@angular/common';
+
+						@Component({
+						  selector: 'app-httpreq',
+						  imports: [ReactiveFormsModule, CommonModule],
+						  templateUrl: './httpreq.html',
+						  styleUrl: './httpreq.css',
+						})
+						
+						export class Httpreq {
+						  constructor(private userservice: userservice) {}
+						  
+							// current upload count
+						  progresscount = 0
+						  // current uploading status
+						  progressstatus = ''
+							
+							
+						  addfile(event : Event){
+							const input = event.target as HTMLInputElement;
+							if(!input.files || input.files.length === 0){
+							  return;
+							}
+
+							const file = input.files[0];
+							this.uploadfile(file);
+						  }
+							
+							// function for the handling real time uploading data 
+						  uploadfile(file:File){
+							this.userservice.uploadFile(file).subscribe((event)=>{
+							  switch(event.type){ // when select or sent file to serve then show Upload Loading...
+								case HttpEventType.Sent:
+								  this.progressstatus = "Upload Loading....!";
+								  break;
+
+								case HttpEventType.UploadProgress : // show current number of uploading value
+								  this.progresscount = Math.floor((event.loaded/(event.total?? 1))*100);
+								  break;
+
+								case HttpEventType.Response:// after uploading complete then Uploaded Data SuccessFully
+								  this.progressstatus = "Uploaded Data SuccessFully Done !";
+								  console.log(event.body);
+								  break;
+							  }
+							})
+						  }
+						}
+						
+				httpreq.html :
+					  <input type="file" (change)="addfile($event)"> // input as file and fire addfile function 
+					  <div *ngIf="progresscount >0"> // show if the progresscount is > 0
+						<progress max="100" [value]="progresscount"></progress> // progree bar 
+						<span>{{progresscount}}%</span>
+						<p>{{progressstatus}}</p>
+					  </div>
+					  
+					  
+			○ Handling request failure :
+				- when the api responce consume the over timing, and consume the over timing then server throw the error, or erro message and show in the front end.
+				- in this we use the timeout(minimum consume time), retry(retry fetch data), catchError(erro Function handle error), HttpErrorResponse.
+				
+				Ex.
+					userservice.ts :
+						import {
+						  HttpClient,
+						  HttpErrorResponse,
+						} from '@angular/common/http';
+						import { Injectable } from '@angular/core';
+						import { catchError, Observable, retry, throwError, timeout } from 'rxjs';
+
+						@Injectable({ providedIn: 'root' })
+						export class userservice {
+						  constructor(private http: HttpClient) {}
+						  // error fail then handle
+						  getdatawitherrorcheck(): Observable<any> {
+							return this.http // fetch 500 comment data from internet
+							  .get('https://jsonplaceholder.typicode.com/comments')
+							  .pipe(timeout(147), retry(2), catchError(this.handleError)); // maximum time consume 147 mm seconds, retry time twise, catch error by below function
+						  }
+							
+						  private handleError(erro: HttpErrorResponse) { // handle server side erro by HttpErrorResponse
+							let msg = 'Something Went Wrong !';
+							if (erro.status === 0) { // if the network is going off then msg show
+							  msg = 'Network error or Server unreachanble';
+							} else {
+							  msg = 'Server Side Error !'; // other condition show server side error
+							}
+
+							return throwError(() => ({
+							  msg, // error get by msg
+							  status: erro.status, 
+							}));
+						  }
+						}
+					
+					httpreq.ts :
+						import { Component } from '@angular/core';
+						import { userservice } from '../configservice';
+						import { ReactiveFormsModule } from '@angular/forms';
+						import { CommonModule } from '@angular/common';
+
+
+						@Component({
+						  selector: 'app-httpreq',
+						  imports: [ReactiveFormsModule, CommonModule],
+						  templateUrl: './httpreq.html',
+						  styleUrl: './httpreq.css',
+						})
+						export class Httpreq {
+						  constructor(private userservice: userservice) {}
+						  // api response fail
+						  ngOnInit(){
+							this.geterrocheck()
+						  }
+
+						  loading = false;
+						  errormsg = '';
+						  edata : string[] = [];
+						  geterrocheck(){
+							this.loading = true;
+							this.errormsg= '';
+								
+								// get the data function
+							this.userservice.getdatawitherrorcheck().subscribe({
+							  next:data=>{
+
+								  this.edata = data;
+								  this.loading = false;
+								  console.log(this.edata)
+							  },
+							  error:err=>{
+								this.loading= false;
+								this.errormsg= err.msg;
+							  }
+							})
+						  }
+
+						  retry() { // if the api is fail then retry is used for re fetched data
+							this.geterrocheck();
+						  }
+						}
+
+				httpreq.html :
+					<h2>Api Responce Fail Check :</h2>
+				  <!-- <button (click)="geterrocheck()">Get Data</button> -->
+				  <p *ngIf="loading">Loading users...</p>
+
+				  <!-- Error -->
+				  <div *ngIf="errormsg" class="alert alert-danger">
+					{{ errormsg }}
+					<button class="btn btn-sm btn-warning ms-2" (click)="retry()">
+					  Retry
+					</button>
+				  </div>
+
+				  <!-- Success -->
+				  <ul *ngIf="!loading && !errormsg">
+					<li *ngFor="let user of edata">
+					  {{ user.length }}
+					</li>
+				  </ul>
+				  <hr class="border border-secondary" />
+	
+		○ Advanced fetch options :
+			🟢 1. Fetch Options (Overview)
+
+				These are special settings you can pass in Angular when using the Fetch backend to control how HTTP requests behave.
+				Example:
+
+				this.http.get('/api/data', {
+				  cache: 'no-cache',
+				  priority: 'high',
+				  mode: 'cors'
+				}).subscribe(data => console.log(data));
+
+			🟡 2. HTTP Caching Control (cache)
+
+				Controls how the browser uses cached responses.
+
+				Option	What it does	Use case
+				force-cache	Always use cached response, even if stale	Config files, static JSON
+				no-cache	Always check network first	Live data, dashboards
+				only-if-cached	Use cache only, fail if missing	Offline apps, PWA
+				reload	Ignore cache completely	Debugging, admin tools
+
+				✅ Tip: Improves page speed and performance.
+
+			🟡 3. Request Priority (priority)
+
+				Controls which requests load first. Helps Core Web Vitals (LCP, INP).
+
+				Option	What it does	Use case
+				high	Load early	Hero image, main content
+				low	Load later	Analytics, background requests
+				auto	Browser decides	Normal requests
+
+				✅ Tip: Use high priority for things users see first.
+
+			🟡 4. Request Mode (mode)
+
+				Controls cross-origin behavior.
+
+				Option	What it does	Use case
+				same-origin	Only allow requests to same domain	Internal sensitive APIs
+				cors	Allow cross-origin with proper server headers	External APIs
+				no-cors	Send request, but response is opaque	Images, scripts, fire-and-forget analytics
+				🟡 5. Redirect Handling (redirect)
+
+				Controls what happens when a request is redirected.
+
+				Option	What it does
+				follow	Automatically follow redirects (default)
+				error	Throw an error if redirected
+				manual	Handle redirect manually in code
+
+				✅ Useful for login flows or security checks.
+
+			🟡 6. Credentials Handling (credentials)
+
+				Controls cookies / auth info sent with request.
+				Option	What it does
+				omit	Never send cookies
+				same-origin	Send cookies for same origin only
+				include	Always send cookies, even cross-origin
+
+				✅ Important for login/authenticated APIs.
+
+			🟡 7. Referrer (referrer)
+
+				Controls what URL is sent as “Referrer”.
+
+				Example: referrer: 'https://example.com/page1'
+				Default: URL of the current page
+
+			🟡 8. Referrer Policy (referrerPolicy)
+
+				Controls how much referrer info is sent.
+				Option	Meaning
+				no-referrer	Don’t send any referrer
+				origin	Send only origin (https://example.com)
+				strict-origin-when-cross-origin	Full URL for same origin, only origin for cross-origin
+				✅ Helps privacy & security.
+
+			🟡 9. Integrity (integrity)
+
+				Used to verify file integrity (hash check) for scripts, styles, etc.
+
+				Example:
+				this.http.get('/assets/app.js', { integrity: 'sha384-abc123...' })
+				✅ Ensures file was not tampered with during download.
+
+			🟢 💡 Beginner Cheat Sheet (All Together)
+				Option			Simple Meaning				When to use
+				--------------------------------------------------------------------
+				cache			Use or ignore browser cache	Speed vs fresh data
+				priority		Load early or late			Critical UI vs background
+				mode			Cross-origin behavior		Internal vs external API
+				redirect		What to do on redirect		Login / security flows
+				credentials		Send cookies or not			Authenticated APIs
+				referrer		URL sent as referrer		Analytics / tracking
+				referrerPolicy	How much referrer info		Privacy
+				integrity		Verify file hash			Security / CDN
+				
+				Http Observables
+
+
+
+			
+
+
+			
+			
+
 
 						
 						
