@@ -7885,15 +7885,210 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 				referrerPolicy	How much referrer info		Privacy
 				integrity		Verify file hash			Security / CDN
 				
-				Http Observables
+			
+			○ Http Observables :
+				- Http Observables represent an asynchronous HTTP request that can be started, canceled, combined, and automatically cleaned up.
+				
+						| Concept                | Meaning                     |
+						| ---------------------- | --------------------------- |
+						| Cold Observable        | No request until subscribed |
+						| Multiple subscriptions | Multiple HTTP calls         |
+						| Unsubscribe            | Cancels request             |
+						| async pipe             | Auto subscribe/unsubscribe  |
+						| switchMap              | Cancels previous requests   |
+						| Auto complete          | No memory leak (usually)    |
+
+			○ Best practices :
+				
+				- While HttpClient can be injected and used directly from components, generally we recommend you create reusable, injectable services which isolate and encapsulate data access logic. For example, this UserService encapsulates the logic to request data for a user by their id:
+				
+					Ex.
+						
+						@Injectable({providedIn: 'root'})
+						export class UserService {
+						  private http = inject(HttpClient);
+						  getUser(id: string): Observable<User> {
+							return this.http.get<User>(`/api/user/${id}`);
+						  }
+						}
+				
+				- Within a component, you can combine @if with the async pipe to render the UI for the data only after it's finished loading:
+
+					import { AsyncPipe } from '@angular/common';
+					@Component({
+					  imports: [AsyncPipe],
+					  template: `
+						@if (user$ | async; as user) {
+						  <p>Name: {{ user.name }}</p>
+						  <p>Biography: {{ user.biography }}</p>
+						}
+					  `,
+					})
+					export class UserProfileComponent {
+					  userId = input.required<string>();
+					  user$!: Observable<User>;
+					  private userService = inject(UserService);
+					  constructor(): void {
+						effect(() => {
+						  this.user$ = this.userService.getUser(this.userId());
+						});
+					  }
+					}
+					
+	○ Reactive data fetching with httpResource :
+		- httpResource enables reactive HTTP data fetching using Angular Signals, automatically handling re-fetching, cancellation, loading, and errors without manual subscriptions.
+		
+			| Feature         | Http Observable | httpResource |
+			| --------------- | --------------- | ------------ |
+			| Subscription    | Manual          | Automatic    |
+			| Cancellation    | `unsubscribe()` | Automatic    |
+			| Reactive inputs | RxJS            | Signals      |
+			| Loading state   | Manual          | Built-in     |
+			| Code size       | More            | Less         |
+		
+		- httpResource is a reactive wrapper around HttpClient that gives you the request status and response as signals. You can thus use these signals with computed, effect, linkedSignal, or any other reactive API. Because it's built on top of HttpClient, httpResource supports all the same features, such as interceptors.
+
+	
+		○ Using httpResource :
+			- if we use the simple way for http Observable that is return only retur api data and in this also like make or declare the methods and subscribe the method where we need or use.
+			- in simple language when use the observable then it's declare or subscribe then it's fetching complete and get the api responce data.
+			- but the httpResource is declare once time after it's subscribe auto cancel auto or get the return data automatic.
+			
+			Ex.(simple basic example of the httpResource)
+			componanent file :
+				import { Component } from '@angular/core';
+				import { userservice } from '../configservice';
+				import { ReactiveFormsModule } from '@angular/forms';
+				import { httpResource } from '@angular/common/http';
+				import { CommonModule } from '@angular/common';
+
+				@Component({
+				  selector: 'app-httpreq',
+				  imports: [ReactiveFormsModule, CommonModule],
+				  templateUrl: './httpreq.html',
+				  styleUrl: './httpreq.css',
+				})
+				export class Httpreq {
+				  constructor(private userservice: userservice) {}
+				  // use the httpResource
+				  httpResource_Component = httpResource.text(
+					() => 'https://jsonplaceholder.typicode.com/comments/1'
+				  );
+
+				  getdata() {
+					this.httpResource_Component();
+				  }
+				}
+				
+			html file :
+				<button (click)="getdata">Fetch Data</button>
+				// here simplly declare the httpResource and it's subscribe auto when it's calling
+				
+			
+			○ other style to declare the httpResource :
+				user = httpResource(() => ({
+				  url: `/api/user/${userId()}`,
+				  method: 'GET',
+				  headers: {
+					'X-Special': 'true',
+				  },
+				  params: {
+					'fast': 'yes',
+				  },
+				  reportProgress: true,
+				  transferCache: true,
+				  keepalive: true,
+				  mode: 'cors',
+				  redirect: 'error',
+				  priority: 'high',
+				  cache: 'force-cache',
+				  credentials: 'include',
+				  referrer: 'no-referrer',
+				  integrity: 'sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GhEXAMPLEKEY=',
+				  referrerPolicy: 'no-referrer',
+				}));
+				// here all work is done which is used in the Observable
+				
+				
+			○ httpResource Control :
+				hasvalue, error, isLoading etc..
+				
+				Ex.
+					@if(user.hasValue()) { // if the api has value then it's reutrn
+					  <user-details [user]="user.value()">
+					} @else if (user.error()) { // if it's return error then print error
+					  <div>Could not load user information</div>
+					} @else if (user.isLoading()) { // during fetching data from the api server during this time print this
+					  <div>Loading user info...</div>
+					}
+				
+			○ Response types :
+				httpResource.text(() => ({ … })); // returns a string in value() 
+				httpResource.blob(() => ({ … })); // returns a Blob object in value()
+				httpResource.arrayBuffer(() => ({ … })); // returns an ArrayBuffer in value()
+				
+			
+			○ Response parsing and validation :
+				- in the MVC style Model is the schema of the represent of the data result same thing are apply on this topic.
+				- using zod (install zod by npm install zod) define the data represent rule if the data is the broken those rule then throw the error, it's same like a Model in the MVC architecture.
+				
+				Ex.
+					service file :
+						import {
+						  HttpClient,
+						  httpResource,
+						} from '@angular/common/http';
+						import { Injectable } from '@angular/core';
+						import { z } from 'zod';
+						
+						// this is the define the rule of the api result data
+						// here when first consider id,name,body and also id is always consider number as well as name,body
+						export const Comment_Parsing_Validation = z.object({
+						  id: z.number(),
+						  name: z.string(),
+						  body: z.string(),
+						});
 
 
+						@Injectable({ providedIn: 'root' })
+						export class userservice {
+						  constructor(private http: HttpClient) {}
+						  commentApi = httpResource(() => `https://jsonplaceholder.typicode.com/comments/1`, {
+							// here apply the that rule
+							parse: Comment_Parsing_Validation.parse,
+						  });
 
+						  Parsing_Validating() {
+								if (this.commentApi.hasValue()) {
+								  console.log('Parsed Comment:', this.commentApi.value());
+								}
+							}
+							console.log('200 OK');
+						  }
+					}
+				
+				componanentn file :
+				  Get_Data_With_Validating_And_Parsing(){
+					this.userservice.Parsing_Validating();
+				  }
+				  
+				html file :
+					 <button (click)="Get_Data_With_Validating_And_Parsing()" class="btn btn-success">Get By zod</button>
+	
+	○ Interceptors :
+		- 
+					
+				
+			
 			
 
 
-			
-			
+
+				
+
+
+				
+				
 
 
 						
