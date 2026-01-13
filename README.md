@@ -8076,8 +8076,96 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 					 <button (click)="Get_Data_With_Validating_And_Parsing()" class="btn btn-success">Get By zod</button>
 	
 	○ Interceptors :
-		- 
+		- HTTP Interceptors are a very important concept in Angular, especially when working with APIs.
+		- An HTTP Interceptor is a class that sits between your Angular app and the backend server.
+		- It allows you to:
+			Modify outgoing HTTP requests
+			Handle incoming HTTP responses
+			Catch errors globally
+			Add logic like:
+			Authentication tokens (JWT)
+			Logging
+			Loading spinners
+			Error handling
+		- Real-Life Analogy :
+			Think of an interceptor like security at an airport ✈️:
+				Every passenger (HTTP request) must pass through security
+				Security can:
+					Check passport (auth token)
+					Scan luggage (request data)
+					Stop suspicious passengers (errors)
 					
+		○ Basic Structure of an Interceptor :
+			import { Injectable } from '@angular/core';
+			import {
+			  HttpEvent,
+			  HttpHandler,
+			  HttpInterceptor,
+			  HttpRequest
+			} from '@angular/common/http';
+			import { Observable } from 'rxjs';
+
+			@Injectable()
+			export class AuthInterceptor implements HttpInterceptor {
+
+			  intercept(
+				req: HttpRequest<any>,
+				next: HttpHandler
+			  ): Observable<HttpEvent<any>> {
+
+				// logic here
+				return next.handle(req);
+			  }
+			}
+			
+			Ex.
+				
+				(Simple Basic Example)
+				export function testingInte(
+				  req: HttpRequest<unknown>,
+				  next: HttpHandlerFn
+				): Observable<HttpEvent<unknown>> {
+				  console.log(req.url," Sujal");
+				  return next(req);
+				}
+				
+				(Modify Body)
+				export function goodInterceptor(
+				  req: HttpRequest<unknown>,
+				  next: HttpHandlerFn
+				):Observable<HttpEvent<unknown>>{
+				  if(!req.body)
+					return next(req);
+
+				  const newbody ={
+					...req.body,
+					isAdmin :true
+				  }
+
+				  const newreq = req.clone({body:newbody})
+
+				  return next(newreq);
+				}
+				
+				
+				Register In The Main.ts :
+					
+					bootstrapApplication(App,{
+					  providers:[
+						provideRouter(routes),
+						provideHttpClient(withInterceptors([goodInterceptor])) // functional registration
+					  ],
+					})
+
+
+○ Server-side & hybrid rendering :
+	- Temporary Not Consider ...
+	
+○ Angular Aria :
+	- 
+				
+			
+
 				
 			
 			
