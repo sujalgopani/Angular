@@ -1,7 +1,7 @@
 selector -> componanent named define which is used in access componanent in other componanent
 imports -> import the other side to componanent like header,footer [header,footer or any directives]
 templateurl -> seprate the html file attach
-styleurl -> seprate css file attach
+styleurl -> seprate css file attacg
 template -> in html write on this ts file
 
 signal -> take value set or update in componanent
