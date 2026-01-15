@@ -8162,10 +8162,186 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 	- Temporary Not Consider ...
 	
 ○ Angular Aria :
-	- 
+	- Building accessible components seems straightforward, but implementing them according to the W3C Accessibility Guidelines requires significant effort and accessibility expertise.
+	- Angular Aria is a collection of headless, accessible directives that implement common WAI-ARIA patterns. The directives handle keyboard interactions, ARIA attributes, focus management, and screen reader support. All you have to do is provide the HTML structure, CSS styling, and business logic!
+	- when keybord, mouse is used then browser perofrm not properly by using this we will handle the keybord, mouse events.
+	- Installation
+		 ○ npm install @angular/aria
+		 
+		 Search and selection :
+			Component		Description
+			Autocomplete	Text input with filtered suggestions that appear as users type
+			Listbox			Single or multi-select option lists with keyboard navigation
+			Select			Single-selection dropdown pattern with keyboard navigation
+			Multiselect		Multiple-selection dropdown pattern with compact display
+			Combobox		Primitive directive that coordinates a text input with a popup
+			
+		Navigation and call to actions
+			Component	Description
+			Menu		Dropdown menus with nested submenus and keyboard shortcuts
+			Menubar		Horizontal navigation bar for persistent application menus
+			Toolbar		Grouped sets of controls with logical keyboard navigation
+		
+		Content organization
+			Component	Description
+			Accordion	Collapsible content panels that can expand individually or exclusively
+			Tabs		Tabbed interfaces with automatic or manual activation modes
+			Tree		Hierarchical lists with expand/collapse functionality
+			Grid		Two-dimensional data display with cell-by-cell keyboard navigation
+		
+		When to use Angular Aria
+
+			Angular Aria works well when you need accessible interactive components that are WCAG compliant with custom styling. Examples include:
+
+			Building a design system - Your team maintains a component library with specific visual standards that need accessible implementations
+			Enterprise component libraries - You're creating reusable components for multiple applications within an organization
+			Custom brand requirements - The interface needs to match precise design specifications that pre-styled component libraries cannot easily accommodate
+			
+		When not to use Angular Aria
+			Angular Aria might not fit every scenario:
+			Pre-styled components - If you need components that look complete without custom styling, use Angular Material instead
+			Simple forms - Native HTML form controls like <button> and <input type="radio"> provide built-in accessibility for straightforward use cases
+			Rapid prototyping - When validating concepts quickly, pre-styled component libraries reduce initial development time
+		
+	○ Accordion :
+		- An accordion organizes related content into expandable and collapsible sections, reducing page scrolling and helping users focus on relevant information. Each section has a trigger button and a content panel. Clicking a trigger toggles the visibility of its associated panel.
+		- when we want to show output like sub menu labling or under main one topic sub topic we declare then it's usefull.
+		
 				
 			
+	 Ex.
+		ts file :
+			import { Component } from '@angular/core';
+			// must import this class for the performing accordion in the browser
+			import {
+			  AccordionGroup,
+			  AccordionTrigger,
+			  AccordionPanel,
+			  AccordionContent,
+			} from '@angular/aria/accordion';
+			import { FormsModule } from "@angular/forms";
 
+
+			@Component({
+			  selector: 'app-accordion',
+			  imports: [AccordionGroup, AccordionTrigger, AccordionPanel, AccordionContent, FormsModule],
+			  templateUrl: './accordion.html',
+			  styleUrl: './accordion.css',
+			})
+
+			export class Accordion {}
+
+			
+		html file :
+			<h2>Accordion :</h2>
+				<!-- here if we want to apply only single panel trigger then option is stay false other wise for the multiple then true -->
+				<div ngAccordionGroup [multiExpandable]="true"> <!-- ngAccordionGroup contain the all panel group -->
+				  <h4>Single expansion mode :</h4>
+				  <h3>
+					<span ngAccordionTrigger panelId="q1" #trigger1="ngAccordionTrigger"> <-- ngAccordionTrigger is main base to triger sub base or || panelId is trigger opr open the content by it's id -->
+					  Something Here
+					  <span
+						aria-hidden="true"
+						class="expand-icon" 
+						[class.expand-icon__expanded]="trigger1.expanded()" <!-- when the trigger1 is open then apply the expand-icon__expanded class by custom css class -->
+						translate="no"
+						>▲</span>
+					</span>
+				  </h3>
+				  <div ngAccordionPanel panelId="q1"> <!-- ngAccordionPanel or panelId is sub content which is triggered by the panelId -->
+					<ng-template ngAccordionContent>
+					  <p>Lorem ipsum dolor sit amet.</p>
+					</ng-template>
+				  </div>
+					
+					<!-- same panel like above first panel -->
+				  <h3>
+					<span ngAccordionTrigger panelId="q3" #trigger2="ngAccordionTrigger"> Just Seen
+					  <span
+						aria-hidden="true"
+						class="expand-icon"
+						[class.expand-icon__expanded]="trigger2.expanded()" 
+						translate="no"
+						>▲</span>
+					</span>
+				  </h3>
+
+				  <div ngAccordionPanel panelId="q3">
+					<ng-template ngAccordionContent>
+					  <p>Lorem ipsum dolor sit amet.</p>
+					</ng-template>
+				  </div>
+				  <div>
+
+				  </div>
+				</div>
+			
+		css file :
+			[ngAccordionGroup]{ /* apply on full ngAccordionGroup */
+			  width: 500px;
+			  padding: 10px;
+			}
+			
+			h3:focus-within, /* key bord foucs */
+			h3:hover /*  mouse hover*/ {
+			  background-color: #e6d4d7;
+			}
+
+			h3:first-of-type /* first of h3 select only first h3 of the line */ {
+			  border-radius: 1rem 1rem 0 0;
+			  border-block-start: 1px solid black;
+			}
+
+			h3:last-of-type { /* last of the all h3 */
+			  border-block-end: 1px solid black;
+			  border-radius: 0 0 1rem 1rem;
+			}
+
+			h3:last-of-type:has([aria-expanded='true']) { /* if the last h3 is trigered or expanded then apply this css */
+			  border-block-end: 0;
+			  border-bottom-left-radius: 0;
+			  border-bottom-right-radius: 0;
+			}
+
+			p { /* apply on all p(paragraph) */
+			  margin: 0;
+			  padding: 0 1.5rem 1.5rem 1.5rem;
+			  color: #756164;
+			  font-size: 0.875rem;
+			  border-inline: 1px solid var(--quinary-contrast);
+			  border-radius: 0 0 1rem 1rem;
+			  border-block-end: 1px solid var(--quinary-contrast);
+			  margin-block-end: 1rem;
+			}
+
+			[ngAccordionTrigger] { /* apply on ngAccordionTrigger */
+			  display: flex;
+			  align-items: center;
+			  justify-content: space-between;
+			  outline: none;
+			  cursor: pointer;
+			  padding: 1.5rem;
+			}
+
+			[ngAccordionTrigger][aria-disabled='true'] {
+			  opacity: 0.5;
+			  cursor: default;
+			}
+
+
+			.expand-icon { /* appy on where we write this class in the html */
+			  font-size: 1.3rem;
+			  color: rgb(208, 128, 141);
+			  transition: transform .3s ease-out;
+			}
+
+			.expand-icon__expanded { /* same apply like above expand-icon class type*/
+			  transform: rotate(180deg);
+			}
+	
+	○ Autocomplete :
+		- An accessible input field that filters and suggests options as users type, helping them find and select values from a list.
+		- 
 				
 			
 			
