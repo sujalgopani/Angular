@@ -8342,6 +8342,8 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 	○ Autocomplete :
 		- An accessible input field that filters and suggests options as users type, helping them find and select values from a list.
 		- 
+		
+	○ Combobox :
 				
 			
 			
