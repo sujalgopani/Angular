@@ -8346,8 +8346,171 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 	○ Combobox :
 				
 			
-			
+○ Animating your applications with animate.enter and animate.leave :
+	- Well-designed animations can make your application more fun and straightforward to use, but they aren't just cosmetic. Animations can improve your application and user experience in a number of ways:
 
+		Without animations, web page transitions can seem abrupt and jarring
+		Motion greatly enhances the user experience, so animations give users a chance to detect the application's response to their actions
+		Good animations can smoothly direct the user's attention throughout a workflow
+		Angular provides animate.enter and animate.leave to animate your application's elements. These two features apply enter and leave CSS classes at the appropriate times or call functions to apply animations from third party libraries. animate.enter and animate.leave are not directives. They are special API supported directly by the Angular compiler. They can be used on elements directly and can also be used as a host binding.
+
+		On this page
+		animate.enter
+		animate.leave
+		Element removal order matters
+		Event Bindings, Functions, and Third-party Libraries
+		Compatibility with Legacy Angular Animations
+		Testing
+		More on Angular animations
+	- Enter & Leave : when the animation add in the DOM Then Enter & When the Remove From DOM then Leave.
+	
+		Ex.
+			animate.enter & Leave :
+				ts File :
+					import { Component, signal } from '@angular/core';
+					@Component({
+					  selector: 'app-animatingapp',
+					  imports: [],
+					  templateUrl: './animatingapp.html',
+					  styleUrl: './animatingapp.css',
+					})
+					export class Animatingapp {
+					  isShown = signal(false);
+
+					  Toggle(){
+						this.isShown.update((i)=>!i);
+						console.log(this.isShown);
+					  }
+					}
+
+					
+				Html File : 
+					<h3>Using animate.enter & animate.leave :</h3>
+					<button type="button" class="toggle-btn btn btn-secondary m-3" (click)="Toggle()">Click</button>
+
+					@if (isShown()) {
+					  <div
+						class="enter-container w-50 mx-auto d-block"
+						animate.enter="enter-animation"
+						animate.leave="leave-animation"
+					  >
+						<p>The box is entering & leaving</p>
+					  </div>
+					}
+
+				Css File :
+					:host {
+					  display: block;
+					  height: 200px;
+					}
+
+					/* Card UI */
+					.enter-container {
+					  border: 2px solid #dddddd;
+					  margin-top: 1em;
+					  padding: 20px;
+					  font-weight: bold;
+					  font-size: 20px;
+					}
+
+					.enter-container p {
+					  text-align: center;
+					}
+
+					/* ENTER : Bottom ➜ Top */
+					.enter-animation {
+					  animation: enterFromBottom 0.6s ease-out;
+					}
+
+					@keyframes enterFromBottom {
+					  from {
+						opacity: 0;
+						transform: translateY(30px);
+					  }
+					  to {
+						opacity: 1;
+						transform: translateY(0);
+					  }
+					}
+
+					/* LEAVE : Top ➜ Bottom */
+					.leave-animation {
+					  animation: leaveToBottom 0.6s ease-in;
+					}
+
+					@keyframes leaveToBottom {
+					  from {
+						opacity: 1;
+						transform: translateY(0);
+					  }
+					  to {
+						opacity: 0;
+						transform: translateY(30px);
+					  }
+					}
+
+○ Animating your Application with CSS :
+	- In this concept we learn the using only pure css perform the animation using transition.
+	- here no need to js or animation properties.
+	
+	Ex.
+		ts file :
+			 isOpen = signal(false);
+			  ToggleOpen(){
+				this.isOpen.update((i)=>!i);
+			  }
+
+		
+		html file :
+			<h3>Animating your Application with CSS</h3>
+
+			<button type="button" class="toggle-open-close-btn" (click)="ToggleOpen()">Toggle Open/Close</button>
+
+			<div class="open-close-container" [class.open]="isOpen()">
+			  <p>The Box Is  Now {{isOpen() ? 'Open' : 'Closed'}} !</p>
+			</div>
+
+		css file :
+			.container {
+			  display: grid;
+			  grid-template-rows: 0fr;
+			  overflow: hidden;
+			  transition: grid-template-rows 1s;
+
+			}
+
+			.container.openauto {
+			  grid-template-rows: 1fr;
+			}
+
+			.container .content {
+			  min-height: 0;
+			  transition: visibility 1s;
+			  padding: 0 20px;
+			  visibility: hidden;
+			  margin-top: 1em;
+			  font-weight: bold;
+			  font-size: 20px;
+			  background: #3b82f6;
+			  color: #ebebeb;
+			  overflow: hidden;
+			}
+			.container.openauto .content {
+			  visibility: visible;
+			}
+			.toggle-btn {
+			  background: transparent;
+			  border: 1px solid var(--primary-contrast, black);
+			  color: var(--primary-contrast, black);
+			  padding: 10px 24px;
+			  border-radius: 8px;
+			  cursor: pointer;
+				margin: 10px;
+
+			}
+			
+○ Drag & Drop :
+	- Comming soon..
 
 
 				
