@@ -8509,8 +8509,129 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 
 			}
 			
+			
 ○ Drag & Drop :
-	- Comming soon..
+	○ Basic Drag (cdkDrag) :
+		Use: Any element draggable banava
+		<div cdkDrag>Drag me</div>
+		Element freely drag થઈ શકે છે
+
+	○ Drag with Drop List (cdkDropList)
+
+		Use: List reorder કરવા
+
+		<div cdkDropList (cdkDropListDropped)="drop($event)">
+		  <div cdkDrag *ngFor="let item of list">{{item}}</div>
+		</div>
+
+		drop(event: CdkDragDrop<string[]>) {
+		  moveItemInArray(this.list, event.previousIndex, event.currentIndex);
+		}
+
+
+	○ Same list માં items reorder થાય
+
+		Transfer Between Two Lists
+
+			Use: One list → another list move
+
+			drop(event: CdkDragDrop<string[]>) {
+			  if (event.previousContainer === event.container) {
+				moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+			  } else {
+				transferArrayItem(
+				  event.previousContainer.data,
+				  event.container.data,
+				  event.previousIndex,
+				  event.currentIndex
+				);
+			  }
+			}
+			➡️ Items move થાય (Cut + Paste)
+
+	○ Copy Item Between Lists
+
+		Use: Item copy કરવો (Original stay)
+
+		copy(event: CdkDragDrop<string[]>) {
+		  copyArrayItem(
+			event.previousContainer.data,
+			event.container.data,
+			event.previousIndex,
+			event.currentIndex
+		  );
+		}
+
+
+		➡️ Original list unchanged, new list માં copy
+
+	○ Selective Drop (Predicate)
+
+		Use: Only specific items allow
+
+		evenPredicate(item: CdkDrag<number>) {
+		  return item.data % 2 === 0;
+		}
+
+		<div cdkDropList [cdkDropListEnterPredicate]="evenPredicate"></div>
+
+
+		➡️ Only even numbers drop થશે
+
+	○ Disable Drop Completely
+		notAllowed() {
+		  return false;
+		}
+
+		<div cdkDropList [cdkDropListEnterPredicate]="notAllowed"></div>
+		No item allowed
+
+	○ Restrict Drag Boundary
+
+		Use: Drag only inside container
+
+		<div class="boundary">
+		  <div cdkDrag cdkDragBoundary=".boundary">Drag inside only</div>
+		</div>
+
+	○ Lock Drag Axis
+
+		Use: Only X or Y movement
+
+		<div cdkDrag cdkDragLockAxis="x">Only Horizontal</div>
+		<div cdkDrag cdkDragLockAxis="y">Only Vertical</div>
+
+	○ Drag Start Delay
+
+		Use: Delay before drag start
+
+		<div cdkDrag [cdkDragStartDelay]="1000">Drag after 1 sec</div>
+
+		🔟 Disable Dragging
+		<div cdkDrag [cdkDragDisabled]="true">Disabled</div>
+		➡️ Drag possible નહીં
+
+	🔑 Important Utilities
+		Function	Use
+		moveItemInArray	Reorder same list
+		transferArrayItem	Move item
+		copyArrayItem	Copy item
+		CdkDragDrop	Drop event type
+		CdkDrag	Drag reference
+
+	📦 Required Imports
+		import {
+		  CdkDrag,
+		  CdkDropList,
+		  CdkDragDrop,
+		  moveItemInArray,
+		  transferArrayItem,
+		  copyArrayItem
+		} from '@angular/cdk/drag-drop';
+
+	✅ Summary (One Line)
+
+		Angular CDK Drag & Drop allows reorder, transfer, copy, restrict, filter & control drag behavior easily using directives and helper methods.
 
 
 				
