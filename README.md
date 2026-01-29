@@ -1,3 +1,4 @@
+Angular Help Note 
 selector -> componanent named define which is used in access componanent in other componanent
 imports -> import the other side to componanent like header,footer [header,footer or any directives]
 templateurl -> seprate the html file attach
