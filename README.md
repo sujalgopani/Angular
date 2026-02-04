@@ -8638,7 +8638,8 @@ Template-driven forms:	Rely on directives in the template to create and manipula
 https://github.com/sujalgopani/AngularPractice.git for the crud op
 				
 
-
+Adding Mail Sending Code 
+Also Add Tab Change Or Switch To Auto Save Form Code
 				
 				
 
