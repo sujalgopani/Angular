@@ -8642,10 +8642,7 @@ Adding Mail Sending Code
 Also Add Tab Change Or Switch To Auto Save Form Code
 				
 				
-
-
-						
-						
+make example of the role base login and exploring the JWT token apply in the .Net side
 
 
 
